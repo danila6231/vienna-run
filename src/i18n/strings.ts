@@ -35,6 +35,15 @@ const en = {
   'results.hold': 'Hold for next player',
   'watchdog.restart': "Let's restart!",
   'watchdog.staff': 'Short break. Please ask the staff.',
+  'board.title': 'Leaderboard',
+  'board.todayTop': "Today's top 10",
+  'board.today': 'Today',
+  'board.all': 'All time',
+  'board.empty': 'Be the first!',
+  'board.unavailable': 'The leaderboard is unavailable right now',
+  'board.offline': 'Offline · showing the saved copy',
+  'board.open': 'Leaderboard',
+  'board.close': 'Close',
 };
 
 export type StringKey = keyof typeof en;
@@ -70,6 +79,15 @@ const vi: Record<StringKey, string> = {
   'results.hold': 'Giữ để sang người chơi tiếp theo',
   'watchdog.restart': 'Khởi động lại nhé!',
   'watchdog.staff': 'Tạm nghỉ một chút. Vui lòng gọi nhân viên.',
+  'board.title': 'Bảng xếp hạng',
+  'board.todayTop': 'Top 10 hôm nay',
+  'board.today': 'Hôm nay',
+  'board.all': 'Tất cả',
+  'board.empty': 'Hãy là người đầu tiên!',
+  'board.unavailable': 'Bảng xếp hạng tạm thời không khả dụng',
+  'board.offline': 'Đang ngoại tuyến · hiển thị bản đã lưu',
+  'board.open': 'Bảng xếp hạng',
+  'board.close': 'Đóng',
 };
 
 export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, vi };
