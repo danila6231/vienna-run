@@ -15,7 +15,8 @@
     "simulate": "tsx scripts/simulate.ts",
     "build:offline": "tsc --noEmit && vite build --mode offline",
     "e2e": "playwright test",
-    "soak": "SOAK_ROUNDS=200 playwright test tests/e2e/soak.spec.ts"
+    "soak": "SOAK_ROUNDS=200 playwright test tests/e2e/soak.spec.ts",
+    "package:offline": "npm run build:offline && cp kiosk/launch-offline.bat kiosk/OFFLINE-README.txt dist-offline/ && cd dist-offline && zip -qr ../vienna-run-offline.zip ."
   },
   "dependencies": {
     "@fontsource/albert-sans": "5.3.0",
