@@ -109,3 +109,18 @@ body.hide-cursor, body.hide-cursor * { cursor: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .cta, .fx-confetti i { animation: none; }
 }
+
+/* Self-check (?check=1) */
+.sc-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 0.6cqmin; padding: 0.6cqmin; background: rgba(29, 20, 17, 0.35); z-index: 5; }
+.sc-cell { display: grid; place-items: center; background: rgba(251, 243, 226, 0.85); border-radius: 0.6cqmin; font-family: var(--font-display); font-size: 8cqmin; color: var(--ink); }
+.sc-cell.hit { background: rgba(47, 107, 85, 0.9); color: #fff; }
+.selfcheck { position: absolute; left: 2cqmin; top: 2cqmin; bottom: 2cqmin; width: min(48cqw, 84cqmin); overflow: auto; touch-action: pan-y; background: var(--paper); padding: 2.4cqmin 3cqmin; border-radius: 0.6cqmin; box-shadow: 0.8cqmin 1cqmin 0 var(--shadow); font-size: 2cqmin; display: grid; gap: 1.2cqmin; align-content: start; z-index: 6; }
+.selfcheck h2, .selfcheck h3 { font-family: var(--font-display); font-weight: 400; margin: 0; }
+.selfcheck h2 { font-size: 4.4cqmin; }
+.selfcheck dl { display: grid; grid-template-columns: auto 1fr; gap: 0.5cqmin 2cqmin; margin: 0; }
+.selfcheck dt { color: var(--muted); }
+.selfcheck dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sc-art { margin: 0; padding-left: 2.4cqmin; columns: 2; font-size: 1.6cqmin; }
+.sc-art .designer { color: var(--green); font-weight: 600; }
+.sc-button { font: 600 2.4cqmin var(--font-body); padding: 1.4cqmin; border-radius: 0.6cqmin; border: 0.3cqmin solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; }
+.sc-button.primary { background: var(--red); border-color: var(--red); color: #fff; }
