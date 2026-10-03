@@ -1,4 +1,5 @@
 import type { Tier } from '../config';
+import type { I18n } from '../i18n/i18n';
 import { el } from './dom';
 
 export interface GiftInfo {
@@ -19,20 +20,22 @@ export interface ResultsInfo {
 export class ResultsScreen {
   readonly root = el('div', 'screen results');
   private score = el('b', 'r-score');
-  private thanks = el('p', 'r-thanks', 'Thanks for playing!');
+  private thanks = el('p', 'r-thanks');
+  private scoreLabel = el('span', 'lbl');
+  private holdLabel = el('span');
   private giftBox = el('div', 'r-giftbox');
   private hold = el('button', 'r-hold');
   private holdFill = el('i');
   private holdTimer = 0;
   private onDone: (() => void) | null = null;
 
-  constructor(parent: HTMLElement, private readonly holdMs: number) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly holdMs: number) {
     const card = el('div', 'paper-card results-card');
     const scoreBox = el('div', 'r-scorebox');
-    scoreBox.append(el('span', 'lbl', 'Your score'), this.score);
+    scoreBox.append(this.scoreLabel, this.score);
     card.append(scoreBox, this.thanks, this.giftBox);
     this.hold.type = 'button';
-    this.hold.append(this.holdFill, el('span', '', 'Hold for next player'));
+    this.hold.append(this.holdFill, this.holdLabel);
     const start = (e: Event) => {
       e.preventDefault();
       this.startHold();
@@ -48,6 +51,8 @@ export class ResultsScreen {
     this.root.dataset.ui = '';
     this.root.hidden = true;
     parent.append(this.root);
+    this.relabel();
+    i18n.onChange(() => this.relabel());
   }
 
   show(info: ResultsInfo, onDone: () => void): void {
@@ -71,7 +76,7 @@ export class ResultsScreen {
       this.giftBox.replaceChildren();
       return;
     }
-    const parts: HTMLElement[] = [el('p', 'lbl', 'Your prize'), el('h2', 'r-tier', g.tiers[g.index].name)];
+    const parts: HTMLElement[] = [el('p', 'lbl', this.i18n.t('results.prize')), el('h2', 'r-tier', g.tiers[g.index].name)];
     if (g.url) {
       const img = el('img', 'r-gift');
       img.src = g.url;
@@ -105,5 +110,11 @@ export class ResultsScreen {
     if (this.holdTimer) window.clearTimeout(this.holdTimer);
     this.holdTimer = 0;
     this.hold.classList.remove('holding');
+  }
+
+  private relabel(): void {
+    this.scoreLabel.textContent = this.i18n.t('results.score');
+    this.thanks.textContent = this.i18n.t('results.thanks');
+    this.holdLabel.textContent = this.i18n.t('results.hold');
   }
 }

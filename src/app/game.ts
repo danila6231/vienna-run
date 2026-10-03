@@ -7,6 +7,7 @@ import { tierIndex } from '../core/scoring';
 import type { Features } from '../core/settings';
 import type { Question, RunEvent } from '../core/types';
 import { formatPoints } from '../ui/labels';
+import { I18n } from '../i18n/i18n';
 import type { GiftInfo, ResultsInfo } from '../ui/results';
 import { audio } from './audio';
 import { Flow, type Screen } from './flow';
@@ -50,6 +51,8 @@ export interface GameOptions {
   bank: readonly Question[];
   world: GameWorld;
   ui: GameUi;
+  /** The booth language; reset to Vietnamese after every round. */
+  i18n?: I18n;
   /** What the screens show (gift ladder, leaderboard); both off unless given. */
   features?: Features;
   /** Designer gift card image for a tier, if there is one. */
@@ -71,6 +74,7 @@ export class Game {
   private features: Features;
   /** Settings saved while a round was running; applied when the booth is back on the start screen. */
   private next: { cfg: GameConfig; features: Features } | null = null;
+  private readonly i18n: I18n;
   private seed: number;
   private demoBot: Bot | null = null;
   private playerBot: Bot | null = null;
@@ -82,6 +86,7 @@ export class Game {
   private autoTimer = 0;
 
   constructor(private readonly o: GameOptions) {
+    this.i18n = o.i18n ?? new I18n('vi');
     this.cfg = o.cfg;
     this.features = o.features ?? { showGifts: false, leaderboard: false };
     this.seed = o.seed ?? randomSeed();
@@ -213,7 +218,10 @@ export class Game {
         this.autoTimer = 0;
         this.startDemo();
         ui.attract.show();
-        if (prev === 'results') this.cycles++;
+        if (prev === 'results') {
+          this.cycles++;
+          this.i18n.set('vi');
+        }
         this.o.onAttract?.(this.cycles);
         break;
       case 'howto':
@@ -237,7 +245,7 @@ export class Game {
           this.goTimer = 0.7;
         } else {
           ui.question.hide();
-          ui.fx.popup('Go!', 'neutral', this.o.world.playerScreen());
+          ui.fx.popup(this.i18n.t('fx.go'), 'neutral', this.o.world.playerScreen());
         }
         break;
       case 'question': {
@@ -262,7 +270,7 @@ export class Game {
         break;
       case 'finish':
         audio.play('finish');
-        ui.fx.banner('Finish!', `${this.run.score} points`, cfg.flow.finishSeconds);
+        ui.fx.banner(this.i18n.t('finish.title'), this.i18n.t('finish.points', { score: this.run.score }), cfg.flow.finishSeconds);
         ui.fx.confetti();
         if (this.o.recent) {
           const used = this.questions.slice(0, this.asked).map((q) => q.id);
@@ -286,7 +294,7 @@ export class Game {
   private answered(correct: boolean): void {
     for (const e of this.run.answer(correct)) {
       if (e.kind !== 'answer') continue;
-      this.o.ui.fx.popup(e.points > 0 ? formatPoints(e.points) : 'No points', e.points > 0 ? 'plus' : 'neutral', this.o.world.playerScreen());
+      this.o.ui.fx.popup(e.points > 0 ? formatPoints(e.points) : this.i18n.t('fx.noPoints'), e.points > 0 ? 'plus' : 'neutral', this.o.world.playerScreen());
     }
   }
 

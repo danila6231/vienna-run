@@ -1,22 +1,24 @@
+import type { I18n } from '../i18n/i18n';
 import { el } from './dom';
 
 export class HowtoScreen {
   readonly root = el('div', 'screen howto');
   private card = el('div', 'paper-card howto-card');
   private count = el('div', 'countdown');
-  private bonus = el('li', '', 'Some treats hide a bonus question. Answer right for double points.');
+  private title = el('h2');
+  private lanes = el('li');
+  private items = el('li');
+  private bonus = el('li');
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n) {
     const steps = el('ol');
-    steps.append(
-      el('li', '', 'Tap the left or right side of the screen to switch lanes.'),
-      el('li', '', 'Grab the treats. Dodge Krampus and the bombs.'),
-      this.bonus,
-    );
-    this.card.append(el('h2', '', 'How to play'), steps);
+    steps.append(this.lanes, this.items, this.bonus);
+    this.card.append(this.title, steps);
     this.root.append(this.card, this.count);
     this.root.hidden = true;
     parent.append(this.root);
+    this.relabel();
+    i18n.onChange(() => this.relabel());
   }
 
   /** The rules card; the bonus-question line only shows when questions are switched on. */
@@ -29,7 +31,7 @@ export class HowtoScreen {
 
   /** 3, 2, 1… and "Go!" for 0. */
   showCount(n: number): void {
-    const text = n > 0 ? String(n) : 'Go!';
+    const text = n > 0 ? String(n) : this.i18n.t('howto.go');
     this.root.hidden = false;
     this.card.hidden = true;
     this.count.hidden = false;
@@ -43,5 +45,12 @@ export class HowtoScreen {
 
   hide(): void {
     this.root.hidden = true;
+  }
+
+  private relabel(): void {
+    this.title.textContent = this.i18n.t('howto.title');
+    this.lanes.textContent = this.i18n.t('howto.lanes');
+    this.items.textContent = this.i18n.t('howto.items');
+    this.bonus.textContent = this.i18n.t('howto.bonus');
   }
 }

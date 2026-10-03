@@ -5,6 +5,7 @@ import { applyPreset, buildConfig, defaultSettings } from '../../src/core/settin
 import { validateBank } from '../../src/core/questions';
 import type { Question } from '../../src/core/types';
 import bankJson from '../../src/data/questions.json';
+import { I18n } from '../../src/i18n/i18n';
 import type { ResultsInfo } from '../../src/ui/results';
 
 const bank = validateBank(bankJson);
@@ -138,5 +139,21 @@ describe('Game', () => {
     expect(infoOn.gift?.tiers).toBe(CONFIG.tiers);
     expect(infoOn.gift?.url).toBe(`gift-${infoOn.gift?.index}.png`);
     expect(infoOn.score).toBeGreaterThanOrEqual(0);
+  });
+  it('goes back to Vietnamese after every round', () => {
+    const { world, ui } = fakes();
+    const i18n = new I18n('vi');
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 3, autoplay: true, i18n });
+    i18n.set('en');
+    clock(game).run(120);
+    expect(game.cycles).toBeGreaterThanOrEqual(1);
+    expect(i18n.lang).toBe('vi');
+  });
+
+  it('writes its popups and the finish banner in the current language', () => {
+    const { world, ui } = fakes();
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 3, autoplay: true, i18n: new I18n('vi') });
+    clock(game).run(80);
+    expect(ui.fx.banner).toHaveBeenCalledWith('Về đích!', expect.stringMatching(/^\d+ điểm$/), CONFIG.flow.finishSeconds);
   });
 });

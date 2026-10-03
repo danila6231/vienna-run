@@ -23,11 +23,14 @@ export interface WatchdogDeps {
   canvas: HTMLCanvasElement;
   lastFrameAt: () => number;
   reload?: () => void;
+  /** Card texts in the booth language; English when not given. */
+  text?: (key: 'restart' | 'staff') => string;
 }
 
 /** Any error, lost GPU context or frozen frame loop → a short card, then a clean reload. */
 export function installWatchdog(d: WatchdogDeps): { restart(reason: string): void } {
   const reload = d.reload ?? (() => location.reload());
+  const text = d.text ?? ((key: 'restart' | 'staff') => (key === 'restart' ? "Let's restart!" : 'Short break. Please ask the staff.'));
   let restarting = false;
   const card = (text: string) => {
     const c = document.createElement('div');
@@ -44,12 +47,12 @@ export function installWatchdog(d: WatchdogDeps): { restart(reason: string): voi
     const r = allowReload(readJson<number[]>(RELOADS_KEY, [], isNumbers, session), Date.now(), d.cfg.maxReloads, d.cfg.reloadWindowMs);
     writeJson(RELOADS_KEY, r.history, session);
     if (r.allowed) {
-      card("Let's restart!");
+      card(text('restart'));
       window.setTimeout(reload, 1500);
     } else {
       // Crash loop: show the staff card, but keep trying slowly so the booth recovers on its own
       // once the cause clears (for example a monitor waking up after the browser paused drawing).
-      card('Short break. Please ask the staff.');
+      card(text('staff'));
       window.setTimeout(reload, 60_000);
     }
   };

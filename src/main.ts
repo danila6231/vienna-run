@@ -83,12 +83,12 @@ async function boot(): Promise<void> {
 
   const icons = Object.fromEntries([...GOOD_TYPES, ...BAD_TYPES].map((t) => [t, art.get(`item-${t}`).toDataURL()])) as Record<ItemType, string>;
   const ui = {
-    hud: new Hud(stage, 'Stephansplatz → Riesenrad'),
+    hud: new Hud(stage, i18n),
     fx: new Fx(stage),
-    attract: new AttractScreen(stage, icons, art.url('logo')),
-    howto: new HowtoScreen(stage),
+    attract: new AttractScreen(stage, i18n, icons, art.url('logo')),
+    howto: new HowtoScreen(stage, i18n),
     question: new QuestionScreen(stage, i18n),
-    results: new ResultsScreen(stage, CONFIG.flow.holdSeconds * 1000),
+    results: new ResultsScreen(stage, i18n, CONFIG.flow.holdSeconds * 1000),
   };
   const bootedAt = performance.now();
   const game = new Game({

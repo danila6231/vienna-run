@@ -55,4 +55,10 @@ describe('installWatchdog', () => {
     vi.advanceTimersByTime(2_000);
     expect(reload).toHaveBeenCalledTimes(1);
   });
+  it('shows the restart card in the booth language', () => {
+    const reload = vi.fn();
+    const w = installWatchdog({ cfg: CONFIG.watchdog, canvas: document.createElement('canvas'), lastFrameAt: () => performance.now(), reload, text: (k) => (k === 'restart' ? 'Khởi động lại nhé!' : 'Tạm nghỉ') });
+    w.restart('test');
+    expect(document.body.textContent).toContain('Khởi động lại nhé!');
+  });
 });
