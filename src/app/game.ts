@@ -1,9 +1,8 @@
-import type { GameConfig, Tier } from '../config';
+import type { GameConfig } from '../config';
 import { Bot, BOT_SKILLS } from '../core/bot';
 import { pickQuestions, updateRecent } from '../core/questions';
 import { createRng, randomSeed } from '../core/rng';
 import { Run } from '../core/run';
-import { tierIndex } from '../core/scoring';
 import type { Question, RunEvent } from '../core/types';
 import { formatPoints } from '../ui/labels';
 import { audio } from './audio';
@@ -35,7 +34,7 @@ export interface GameUi {
     reveal(correct: number, picked: number | null): void;
     hide(): void;
   };
-  results: { show(score: number, tiers: readonly Tier[], tierIdx: number, giftUrl: string | null, onDone: () => void): void; hide(): void };
+  results: { show(score: number, onDone: () => void): void; hide(): void };
 }
 
 export interface RecentStore {
@@ -52,7 +51,6 @@ export interface GameOptions {
   /** The bot plays whole rounds: presses start, answers, and dismisses results by itself. */
   autoplay?: boolean;
   recent?: RecentStore;
-  giftUrl?: (tier: number) => string | null;
   /** Called every time the attract screen opens, with the number of finished rounds. */
   onAttract?: (cycles: number) => void;
 }
@@ -230,8 +228,7 @@ export class Game {
         break;
       case 'results': {
         ui.hud.show(false);
-        const tier = tierIndex(this.run.score, cfg.tiers);
-        ui.results.show(this.run.score, cfg.tiers, tier, this.o.giftUrl?.(tier) ?? null, () => this.flow.nextPlayer());
+        ui.results.show(this.run.score, () => this.flow.nextPlayer());
         break;
       }
     }

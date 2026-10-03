@@ -80,7 +80,6 @@ async function boot(): Promise<void> {
     ui,
     seed: params.seed,
     autoplay: params.autoplay,
-    giftUrl: (tier) => art.url(`gift-${tier}`),
     recent: { read: () => readJson(RECENT_KEY, [], isRecent), write: (h) => writeJson(RECENT_KEY, h) },
     onAttract: (cycles) => {
       applyUpdateIfReady();

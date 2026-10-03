@@ -61,7 +61,7 @@ yet keeps its placeholder, so you can deliver piece by piece.
 | `sky.png` | 0–1 | 2048×1024 | Optional painted sky (no transparency). Without it the game uses a soft gradient. |
 | `texture-road.png` | 1 | 1024×1024 | **Seamless tiling** cobblestones, no transparency, **no lane lines** (the game draws them). One tile covers 9 m × 9 m (the full 3-lane road width). |
 | `texture-sidewalk.png` | 1 | 512×512 | **Seamless tiling** paving slabs; one tile covers 3.4 m × 3.4 m. |
-| `gift-0.png`, `gift-1.png` … | 1 per gift tier | 512×512 | Shown on the results screen. `gift-0` is the lowest tier (everyone gets it). |
+| `gift-0.png`, `gift-1.png` … | — | 512×512 | **Not used right now** (gift display was removed from the game). Skip unless it comes back. |
 | `logo.svg` | 0–1 | vector | Optional; replaces the "Vienna Run" title on the start screen. |
 
 ## Two anchors that must match across waiter frames

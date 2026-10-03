@@ -63,9 +63,6 @@ body.hide-cursor, body.hide-cursor * { cursor: none !important; }
 .legend img { width: 7cqmin; height: 7cqmin; object-fit: contain; }
 .legend b { font-variant-numeric: tabular-nums; }
 .legend .bad b { color: #b3262d; }
-.ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2cqmin; font-size: 2.2cqmin; }
-.ladder li { background: var(--paper-2); padding: 0.8cqmin 1.6cqmin; border-radius: 0.5cqmin; display: flex; gap: 0.8cqmin; align-items: baseline; }
-.ladder b { font-family: var(--font-display); font-weight: 400; font-size: 2.8cqmin; }
 
 /* How-to and countdown */
 .howto-card { padding: 4cqmin 6cqmin; display: grid; gap: 2cqmin; max-width: 110cqmin; }
@@ -93,11 +90,8 @@ body.hide-cursor, body.hide-cursor * { cursor: none !important; }
 .results-card { width: min(80cqw, 120cqmin); padding: 4cqmin 6cqmin; display: grid; justify-items: center; gap: 1.6cqmin; text-align: center; }
 .results .lbl { margin: 0; font-size: 2.4cqmin; letter-spacing: 0.14em; text-transform: uppercase; color: var(--red-ink); }
 .r-scorebox { display: grid; gap: 0.6cqmin; }
+.r-thanks { margin: 0; font-family: var(--font-display); font-size: 5cqmin; color: var(--red); }
 .r-score { font-family: var(--font-display); font-weight: 400; font-size: 16cqmin; line-height: 1; font-variant-numeric: tabular-nums; }
-.r-tier { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 8cqmin; color: var(--red); }
-.r-gift { width: 22cqmin; height: 22cqmin; object-fit: contain; }
-.r-ladder li.on { background: var(--red); color: #fff; }
-.r-ladder li.passed { opacity: 0.6; }
 .r-hold { position: absolute; right: 3cqmin; bottom: 3cqmin; font: 600 2.2cqmin var(--font-body); padding: 1.4cqmin 2.6cqmin; border-radius: 99cqmin; border: 0.3cqmin solid var(--paper); background: rgba(29, 20, 17, 0.75); color: var(--paper); overflow: hidden; cursor: pointer; }
 .r-hold i { position: absolute; inset: 0; width: 0; background: var(--red); transition: width 0s linear; }
 .r-hold.holding i { width: 100%; transition-property: width; }

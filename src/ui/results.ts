@@ -1,12 +1,9 @@
-import type { Tier } from '../config';
 import { el } from './dom';
 
+/** End of a round: the score, and a hold-to-reset button for staff. */
 export class ResultsScreen {
   readonly root = el('div', 'screen results');
   private score = el('b', 'r-score');
-  private tierName = el('h2', 'r-tier');
-  private gift = el('img', 'r-gift');
-  private ladder = el('ol', 'ladder r-ladder');
   private hold = el('button', 'r-hold');
   private holdFill = el('i');
   private holdTimer = 0;
@@ -16,8 +13,7 @@ export class ResultsScreen {
     const card = el('div', 'paper-card results-card');
     const scoreBox = el('div', 'r-scorebox');
     scoreBox.append(el('span', 'lbl', 'Your score'), this.score);
-    this.gift.alt = '';
-    card.append(scoreBox, el('p', 'lbl', 'Your prize'), this.tierName, this.gift, this.ladder);
+    card.append(scoreBox, el('p', 'r-thanks', 'Thanks for playing!'));
     this.hold.type = 'button';
     this.hold.append(this.holdFill, el('span', '', 'Hold for next player'));
     const start = (e: Event) => {
@@ -37,18 +33,8 @@ export class ResultsScreen {
     parent.append(this.root);
   }
 
-  show(score: number, tiers: readonly Tier[], tierIdx: number, giftUrl: string | null, onDone: () => void): void {
+  show(score: number, onDone: () => void): void {
     this.score.textContent = String(score);
-    this.tierName.textContent = tiers[tierIdx].name;
-    this.gift.hidden = !giftUrl;
-    if (giftUrl) this.gift.src = giftUrl;
-    this.ladder.replaceChildren(
-      ...tiers.map((t, i) => {
-        const li = el('li', i === tierIdx ? 'on' : i < tierIdx ? 'passed' : '');
-        li.append(el('b', '', `${t.min}+`), el('span', '', t.name));
-        return li;
-      }),
-    );
     this.cancelHold();
     this.onDone = onDone;
     this.root.hidden = false;

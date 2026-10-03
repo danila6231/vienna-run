@@ -16,7 +16,7 @@ export class AttractScreen {
     } else {
       card.append(el('h1', '', 'Vienna Run'));
     }
-    card.append(el('p', 'tagline', 'Race the waiter from Stephansdom to the Riesenrad. Grab Viennese treats, dodge Krampus and the bombs, and win a prize.'));
+    card.append(el('p', 'tagline', 'Race the waiter from Stephansdom to the Riesenrad. Grab Viennese treats and dodge Krampus and the bombs.'));
 
     const legend = el('ul', 'legend');
     for (const type of [...GOOD_TYPES, ...BAD_TYPES]) {
@@ -28,14 +28,7 @@ export class AttractScreen {
       legend.append(li);
     }
 
-    const ladder = el('ol', 'ladder');
-    for (const t of cfg.tiers) {
-      const li = el('li');
-      li.append(el('b', '', `${t.min}+`), el('span', '', t.name));
-      ladder.append(li);
-    }
-
-    card.append(legend, ladder, el('p', 'cta', 'Tap anywhere to play'));
+    card.append(legend, el('p', 'cta', 'Tap anywhere to play'));
     this.root.append(card);
     this.root.hidden = true;
     parent.append(this.root);
