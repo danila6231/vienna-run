@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
-import { LANDMARKS, type LandmarkId } from '../core/route';
+import type { LandmarkId, Route } from '../core/route';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
 
 export interface Landmarks {
-  update(dist: number, time: number): void;
+  update(dist: number, time: number, route: Route): void;
 }
 
 interface Placement {
@@ -79,18 +79,17 @@ export function createLandmarks(scene: THREE.Scene, art: ArtSet): Landmarks {
   checker.position.y = 0.04;
   finish.add(checker);
   scene.add(finish);
-  const finishAt = LANDMARKS.find((l) => l.id === 'riesenrad')?.at ?? 600;
 
   return {
-    update(dist, time) {
-      for (const lm of LANDMARKS) {
+    update(dist, time, route) {
+      for (const lm of route.landmarks) {
         const o = objects.get(lm.id);
         if (!o) continue;
         const r = lm.at - dist + (lm.id === 'riesenrad' ? 8 : 0);
         o.position.z = -r;
         o.visible = r > -60 && r < 280;
       }
-      const fr = finishAt - dist;
+      const fr = route.length - dist;
       finish.position.z = -fr;
       finish.visible = fr > -60 && fr < 280;
       const angle = time * 0.12;

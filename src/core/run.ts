@@ -1,6 +1,7 @@
 import { CONFIG, type GameConfig } from '../config';
 import { scheduleSlots } from './questions';
 import { createRng } from './rng';
+import { buildRoute, type Route } from './route';
 import { applyPoints, questionPoints } from './scoring';
 import { generateItems } from './spawner';
 import { isGood, type GoodType, type Item, type Lane, type RunEvent } from './types';
@@ -19,6 +20,7 @@ export class Run {
   readonly cfg: GameConfig;
   readonly items: Item[];
   readonly slots: number[];
+  readonly route: Route;
   dist = 0;
   time = 0;
   speed: number;
@@ -40,6 +42,7 @@ export class Run {
     this.items = (opts.items ?? generateItems(rng, this.cfg)).slice().sort((a, b) => a.at - b.at);
     this.slots = opts.slots ?? scheduleSlots(rng, this.cfg.questions);
     this.speed = this.cfg.baseSpeed;
+    this.route = buildRoute(this.cfg.runLength);
   }
 
   get progress(): number {

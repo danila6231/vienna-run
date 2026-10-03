@@ -43,8 +43,8 @@ export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: n
       time += frameDt;
       shakeT = Math.max(0, shakeT - frameDt);
       sky.update(frameDt);
-      street.update(run.dist);
-      landmarks.update(run.dist, time);
+      street.update(run.dist, run.route);
+      landmarks.update(run.dist, time, run.route);
       px = runner.update(run, frameDt);
       items.sync(run, px);
       const sx = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 1.4 : 0;

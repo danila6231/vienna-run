@@ -99,4 +99,8 @@ describe('Run', () => {
     expect(a.items.map((i) => [i.at, i.lane, i.type])).toEqual(b.items.map((i) => [i.at, i.lane, i.type]));
     expect(a.slots).toEqual(b.slots);
   });
+  it('builds its route from the run length', () => {
+    const run = new Run({ seed: 1, config: { ...CONFIG, runLength: 900 }, items: [], slots: [] });
+    expect(run.route.landmarks.at(-1)?.at).toBe(900);
+  });
 });

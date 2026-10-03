@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
-import { inPlaza } from '../core/route';
+import type { Route } from '../core/route';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
 import { initialPositions, recycle, type RowSpec } from './rows';
 import { heightForWidth } from './sizing';
 
 export interface Street {
-  update(dist: number): void;
+  update(dist: number, route: Route): void;
   reset(): void;
   setDetail(high: boolean): void;
 }
@@ -115,7 +115,7 @@ export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
 
   let showBack = true;
   return {
-    update(dist) {
+    update(dist, route) {
       roadTex.offset.y = (dist / 9) % 1;
       walkTex.offset.y = (dist / 3.4) % 1;
       updateDashes(dist);
@@ -126,7 +126,7 @@ export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
           if (p !== row.p[i] && row.kind !== 'lamp') place(m, row.variants[Math.floor(Math.random() * row.variants.length)]);
           row.p[i] = p;
           m.position.z = dist - p;
-          m.visible = row.kind === 'lamp' || ((row.kind === 'front' || showBack) && !inPlaza(p, row.side, row.kind === 'back' ? 4 : 0));
+          m.visible = row.kind === 'lamp' || ((row.kind === 'front' || showBack) && !route.inPlaza(p, row.side, row.kind === 'back' ? 4 : 0));
         });
       }
     },
