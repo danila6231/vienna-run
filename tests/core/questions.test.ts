@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config';
 import { pickQuestions, scheduleSlots, shuffleOptions, updateRecent, validateBank } from '../../src/core/questions';
 import { createRng } from '../../src/core/rng';
-import type { Question } from '../../src/core/types';
 import bankJson from '../../src/data/questions.json';
 
 const bank = validateBank(bankJson);
@@ -37,12 +36,15 @@ describe('pickQuestions', () => {
     const recent = bank.map((q) => q.id);
     expect(pickQuestions(createRng(4), bank, 3, recent)).toHaveLength(3);
   });
-  it('shuffles the options but keeps the right answer right', () => {
+  it('shuffles the options the same way in both languages and keeps the right answer right', () => {
     const original = bank[0];
     for (let s = 1; s < 30; s++) {
       const q = shuffleOptions(createRng(s), original);
-      expect(q.options[q.answer]).toBe(original.options[original.answer]);
-      expect([...q.options].sort()).toEqual([...original.options].sort());
+      for (const lang of ['vi', 'en'] as const) {
+        expect(q[lang].options[q.answer]).toBe(original[lang].options[original.answer]);
+        expect([...q[lang].options].sort()).toEqual([...original[lang].options].sort());
+      }
+      expect(q.vi.options.map((o) => original.vi.options.indexOf(o))).toEqual(q.en.options.map((o) => original.en.options.indexOf(o)));
     }
   });
 });
@@ -54,14 +56,21 @@ describe('updateRecent', () => {
 });
 
 describe('question bank', () => {
-  it('has at least 30 valid questions with unique ids', () => {
+  it('has at least 30 valid questions, each in Vietnamese and English', () => {
     expect(bank.length).toBeGreaterThanOrEqual(30);
     expect(new Set(bank.map((q) => q.id)).size).toBe(bank.length);
+    for (const q of bank) {
+      expect(q.vi.q).not.toBe(q.en.q);
+      expect(q.vi.options).toHaveLength(3);
+    }
   });
   it('rejects malformed entries with a readable message', () => {
-    const bad: unknown = [{ id: 'x', q: 'Q?', options: ['a', 'a', 'b'], answer: 0 }];
-    expect(() => validateBank(bad)).toThrow(/options must differ/);
-    const short: Partial<Question>[] = [{ id: 'y', q: 'Q?', options: ['a', 'b'] as unknown as Question['options'], answer: 0 }];
-    expect(() => validateBank(short)).toThrow(/exactly 3 options/);
+    const good = { id: 'x', answer: 0, en: { q: 'Q?', options: ['a', 'b', 'c'] }, vi: { q: 'H?', options: ['a', 'b', 'c'] } };
+    expect(validateBank([good])).toHaveLength(1);
+    expect(() => validateBank([{ ...good, vi: { q: 'H?', options: ['a', 'a', 'b'] } }])).toThrow(/x \(vi\): options must differ/);
+    expect(() => validateBank([{ ...good, en: { q: 'Q?', options: ['a', 'b'] } }])).toThrow(/x \(en\): needs exactly 3 options/);
+    expect(() => validateBank([{ ...good, en: { q: ' ', options: ['a', 'b', 'c'] } }])).toThrow(/x \(en\): empty text/);
+    expect(() => validateBank([{ id: 'y', answer: 0, en: good.en }])).toThrow(/y \(vi\)/);
+    expect(() => validateBank([{ ...good, answer: 3 }])).toThrow(/answer must be 0, 1 or 2/);
   });
 });

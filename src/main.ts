@@ -19,6 +19,7 @@ import { validateBank } from './core/questions';
 import { buildConfig, featuresOf } from './core/settings';
 import { BAD_TYPES, GOOD_TYPES, type ItemType } from './core/types';
 import bankJson from './data/questions.json';
+import { I18n } from './i18n/i18n';
 import { attachInput } from './input/touch';
 import * as P from './render/placeholders/paint';
 import { QualityMonitor } from './render/quality';
@@ -39,6 +40,7 @@ const CORNER_HOLD_MS = 3000;
 const isRecent = (v: unknown): v is string[][] => Array.isArray(v) && v.every((r) => Array.isArray(r) && r.every((x) => typeof x === 'string'));
 
 async function boot(): Promise<void> {
+  const i18n = new I18n('vi');
   const params = parseParams(location.search);
   installKiosk(document, { hideCursor: params.hideCursor && !params.check });
 
@@ -85,7 +87,7 @@ async function boot(): Promise<void> {
     fx: new Fx(stage),
     attract: new AttractScreen(stage, icons, art.url('logo')),
     howto: new HowtoScreen(stage),
-    question: new QuestionScreen(stage),
+    question: new QuestionScreen(stage, i18n),
     results: new ResultsScreen(stage, CONFIG.flow.holdSeconds * 1000),
   };
   const bootedAt = performance.now();

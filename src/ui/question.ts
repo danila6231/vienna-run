@@ -1,4 +1,5 @@
 import type { Question } from '../core/types';
+import type { I18n } from '../i18n/i18n';
 import { el } from './dom';
 
 export class QuestionScreen {
@@ -13,7 +14,7 @@ export class QuestionScreen {
   /** Answers are ignored until this time, so a lane tap that coincides with the question popping up can't pick one. */
   private armedAt = 0;
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n) {
     const card = el('div', 'paper-card question-card');
     const options = el('div', 'q-options');
     for (let i = 0; i < 3; i++) {
@@ -37,9 +38,10 @@ export class QuestionScreen {
   }
 
   show(q: Question, basePoints: number, onPick: (index: number) => void): void {
-    this.title.textContent = `Bonus question! Right answer = double points (${basePoints} → ${basePoints * 2})`;
-    this.text.textContent = q.q;
-    q.options.forEach((o, i) => {
+    const text = q[this.i18n.lang];
+    this.title.textContent = this.i18n.t('question.bonus', { base: basePoints, double: basePoints * 2 });
+    this.text.textContent = text.q;
+    text.options.forEach((o, i) => {
       const b = this.buttons[i];
       b.textContent = o;
       b.className = 'q-option';
@@ -64,7 +66,7 @@ export class QuestionScreen {
       if (i === correct) b.classList.add('right');
       else if (i === picked) b.classList.add('wrong');
     });
-    this.title.textContent = picked === null ? "Time's up! No points this time." : picked === correct ? 'Right! Double points.' : 'Not quite. No points this time.';
+    this.title.textContent = this.i18n.t(picked === null ? 'question.timeUp' : picked === correct ? 'question.right' : 'question.wrong');
   }
 
   hide(): void {

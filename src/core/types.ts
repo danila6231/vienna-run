@@ -29,11 +29,17 @@ export type RunEvent =
   | { kind: 'answer'; item: Item; correct: boolean; points: number }
   | { kind: 'finish'; score: number };
 
-export interface Question {
-  id: string;
+export interface QuestionText {
   q: string;
   options: [string, string, string];
+}
+
+/** A bonus question in both languages; `answer` indexes the options of either language. */
+export interface Question {
+  id: string;
   answer: 0 | 1 | 2;
+  vi: QuestionText;
+  en: QuestionText;
 }
 export type Lang = 'vi' | 'en';
 export const LANGS: readonly Lang[] = ['vi', 'en'];
