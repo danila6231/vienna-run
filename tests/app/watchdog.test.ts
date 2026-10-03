@@ -45,4 +45,14 @@ describe('installWatchdog', () => {
     expect(reload).not.toHaveBeenCalled();
     expect(document.body.textContent).toContain('ask the staff');
   });
+
+  it('keeps retrying slowly after too many restarts, so the booth recovers once the problem clears', () => {
+    sessionStorage.setItem('vienna-run:reloads', JSON.stringify([Date.now(), Date.now(), Date.now(), Date.now(), Date.now()]));
+    const reload = vi.fn();
+    installWatchdog({ cfg: CONFIG.watchdog, canvas: document.createElement('canvas'), lastFrameAt: () => performance.now(), reload }).restart('test');
+    vi.advanceTimersByTime(59_000);
+    expect(reload).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(2_000);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
 });

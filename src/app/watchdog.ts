@@ -47,7 +47,10 @@ export function installWatchdog(d: WatchdogDeps): { restart(reason: string): voi
       card("Let's restart!");
       window.setTimeout(reload, 1500);
     } else {
+      // Crash loop: show the staff card, but keep trying slowly so the booth recovers on its own
+      // once the cause clears (for example a monitor waking up after the browser paused drawing).
       card('Short break. Please ask the staff.');
+      window.setTimeout(reload, 60_000);
     }
   };
   window.addEventListener('error', (e) => restart(`error: ${e.message}`));
