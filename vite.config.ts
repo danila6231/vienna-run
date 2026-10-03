@@ -6,6 +6,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig(({ mode }) => {
   const offline = mode === 'offline';
   return {
+    // The hosted build gets the Supabase address and public key (NEXT_PUBLIC_*, from the Vercel integration).
+    // The USB copy gets nothing, so it runs a local-only leaderboard. Server secrets never match these prefixes.
+    envPrefix: offline ? 'VITE_' : ['VITE_', 'NEXT_PUBLIC_'],
     define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')) },
     resolve: offline ? { alias: { 'virtual:pwa-register': fileURLToPath(new URL('./src/app/pwa-stub.ts', import.meta.url)) } } : {},
     build: offline
