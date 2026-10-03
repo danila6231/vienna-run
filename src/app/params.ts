@@ -9,8 +9,8 @@ export interface Params {
   quality?: QualityLevel;
   /** Opens the booth self-check screen. */
   check: boolean;
-  /** Shows the mouse cursor. */
-  cursor: boolean;
+  /** Hides the mouse cursor (`?hidecursor=1`); off by default so the game is easy to test with a mouse. */
+  hideCursor: boolean;
 }
 
 export function parseParams(search: string): Params {
@@ -32,6 +32,6 @@ export function parseParams(search: string): Params {
     speed: Math.min(16, Math.max(0.25, num('speed') ?? 1)),
     quality: quality === 'high' || quality === 'med' || quality === 'low' ? quality : undefined,
     check: flag('check'),
-    cursor: flag('cursor'),
+    hideCursor: flag('hidecursor'),
   };
 }

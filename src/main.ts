@@ -31,7 +31,7 @@ const isRecent = (v: unknown): v is string[][] => Array.isArray(v) && v.every((r
 
 async function boot(): Promise<void> {
   const params = parseParams(location.search);
-  installKiosk(document, { hideCursor: !params.cursor && !params.check });
+  installKiosk(document, { hideCursor: params.hideCursor && !params.check });
 
   const stage = document.createElement('div');
   stage.id = 'stage';

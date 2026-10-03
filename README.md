@@ -21,7 +21,7 @@ and bombs, answer surprise questions for double points, and win a gift by score 
 
 ## URL switches
 `?check=1` booth self-check · `?autoplay=1` the bot plays whole rounds · `?speed=8` fast-forward ·
-`?seed=7` fixed item layout · `?quality=low|med|high` force graphics level · `?cursor=1` show the mouse.
+`?seed=7` fixed item layout · `?quality=low|med|high` force graphics level · `?hidecursor=1` hide the mouse cursor (shown by default).
 
 ## Changing things
 - **Points, timings, gift tiers:** `src/config.ts`. After changing tiers, run `npm run simulate` to see how many players land in each tier.
