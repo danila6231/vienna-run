@@ -4,6 +4,7 @@ import { inPlaza } from '../core/route';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
 import { initialPositions, recycle, type RowSpec } from './rows';
+import { heightForWidth } from './sizing';
 
 export interface Street {
   update(dist: number): void;
@@ -11,11 +12,18 @@ export interface Street {
   setDetail(high: boolean): void;
 }
 
+/** One look a pooled card can take: its own geometry (sized by its image shape), material and height. */
+interface Variant {
+  geo: THREE.PlaneGeometry;
+  mat: THREE.Material;
+  h: number;
+}
+
 interface Row extends RowSpec {
   kind: 'front' | 'back' | 'lamp';
   side: -1 | 1;
   meshes: THREE.Mesh[];
-  mats: THREE.Material[];
+  variants: Variant[];
   p: number[];
 }
 
@@ -69,32 +77,41 @@ export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
   };
 
   const rows: Row[] = [];
-  const addRow = (kind: Row['kind'], side: -1 | 1, spec: RowSpec, geo: THREE.PlaneGeometry, mats: THREE.Material[], x: number, y: number, rotY: number) => {
+  const place = (m: THREE.Mesh, v: Variant) => {
+    m.geometry = v.geo;
+    m.material = v.mat;
+    m.position.y = v.h / 2; // bottom edge on the ground, whatever the image's height
+  };
+  const addRow = (kind: Row['kind'], side: -1 | 1, spec: RowSpec, variants: Variant[], x: number, rotY: number) => {
     const meshes = Array.from({ length: spec.count }, (_, i) => {
-      const m = new THREE.Mesh(geo, mats[i % mats.length]);
-      m.position.set(x, y, 0);
+      const m = new THREE.Mesh();
+      place(m, variants[i % variants.length]);
+      m.position.x = x;
       m.rotation.y = rotY;
       scene.add(m);
       return m;
     });
-    rows.push({ ...spec, kind, side, meshes, mats, p: initialPositions(spec) });
+    rows.push({ ...spec, kind, side, meshes, variants, p: initialPositions(spec) });
   };
+  /** Cards of a fixed width (they tile along the street); each image keeps its own shape. */
+  const cards = (canvases: HTMLCanvasElement[], width: number, tint?: number): Variant[] =>
+    canvases.map((c) => {
+      const h = heightForWidth(width, c.width / c.height);
+      return { geo: new THREE.PlaneGeometry(width, h), mat: basic({ map: toTexture(c), alphaTest: 0.5, ...(tint ? { color: tint } : {}) }), h };
+    });
 
-  const facadeTex = art.group('facade-').map((c) => toTexture(c));
-  const facadeGeo = new THREE.PlaneGeometry(8, 12);
+  const facades = art.group('facade-');
   // The left side faces away from the light, so it is tinted a little darker.
-  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, facadeGeo, facadeTex.map((t) => basic({ map: t, alphaTest: 0.5, color: 0xe7dfd4 })), -7.9, 6, Math.PI / 2);
-  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, facadeGeo, facadeTex.map((t) => basic({ map: t, alphaTest: 0.5 })), 7.9, 6, -Math.PI / 2);
-  const backMats = art.group('back-').map((c) => basic({ map: toTexture(c), alphaTest: 0.5 }));
-  const backGeo = new THREE.PlaneGeometry(10, 16);
-  addRow('back', -1, { count: 24, spacing: 10, offset: 3 }, backGeo, backMats, -13.5, 8, Math.PI / 2);
-  addRow('back', 1, { count: 24, spacing: 10, offset: 8 }, backGeo, backMats, 13.5, 8, -Math.PI / 2);
+  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, cards(facades, 8, 0xe7dfd4), -7.9, Math.PI / 2);
+  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, cards(facades, 8), 7.9, -Math.PI / 2);
+  const backs = cards(art.group('back-'), 10);
+  addRow('back', -1, { count: 24, spacing: 10, offset: 3 }, backs, -13.5, Math.PI / 2);
+  addRow('back', 1, { count: 24, spacing: 10, offset: 8 }, backs, 13.5, -Math.PI / 2);
   const lampArt = art.get('prop-lamp');
   const lampH = 4.5;
-  const lampGeo = new THREE.PlaneGeometry((lampH * lampArt.width) / lampArt.height, lampH);
-  const lampMats = [basic({ map: toTexture(lampArt), alphaTest: 0.5 })];
-  addRow('lamp', -1, { count: 15, spacing: 16, offset: 2 }, lampGeo, lampMats, -5.05, lampH / 2, 0);
-  addRow('lamp', 1, { count: 15, spacing: 16, offset: 10 }, lampGeo, lampMats, 5.05, lampH / 2, 0);
+  const lamps: Variant[] = [{ geo: new THREE.PlaneGeometry((lampH * lampArt.width) / lampArt.height, lampH), mat: basic({ map: toTexture(lampArt), alphaTest: 0.5 }), h: lampH }];
+  addRow('lamp', -1, { count: 15, spacing: 16, offset: 2 }, lamps, -5.05, 0);
+  addRow('lamp', 1, { count: 15, spacing: 16, offset: 10 }, lamps, 5.05, 0);
 
   let showBack = true;
   return {
@@ -106,7 +123,7 @@ export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
         const span = row.count * row.spacing;
         row.meshes.forEach((m, i) => {
           const p = recycle(row.p[i], dist, span);
-          if (p !== row.p[i] && row.kind !== 'lamp') m.material = row.mats[Math.floor(Math.random() * row.mats.length)];
+          if (p !== row.p[i] && row.kind !== 'lamp') place(m, row.variants[Math.floor(Math.random() * row.variants.length)]);
           row.p[i] = p;
           m.position.z = dist - p;
           m.visible = row.kind === 'lamp' || ((row.kind === 'front' || showBack) && !inPlaza(p, row.side, row.kind === 'back' ? 4 : 0));

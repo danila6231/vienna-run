@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Question } from '../../src/core/types';
 import { QuestionScreen } from '../../src/ui/question';
 
@@ -7,6 +7,20 @@ const q: Question = { id: 'x', q: 'Which river flows through Vienna?', options: 
 const press = (el: Element, type: string) => el.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }));
 
 describe('QuestionScreen', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('ignores a tap that lands in the first moment after the question appears', () => {
+    vi.useFakeTimers();
+    const s = new QuestionScreen(document.body);
+    const onPick = vi.fn();
+    s.show(q, 10, onPick);
+    press(s.root.querySelectorAll('.q-option')[2], 'pointerdown');
+    expect(onPick).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(450);
+    press(s.root.querySelectorAll('.q-option')[0], 'pointerdown');
+    expect(onPick).toHaveBeenCalledExactlyOnceWith(0);
+  });
+
   it('shows the question, the doubling, and three answers', () => {
     const s = new QuestionScreen(document.body);
     s.show(q, 10, () => undefined);
@@ -15,8 +29,10 @@ describe('QuestionScreen', () => {
   });
   it('takes only the first pick, even when a tap fires both pointerdown and click', () => {
     const s = new QuestionScreen(document.body);
+    vi.useFakeTimers();
     const onPick = vi.fn();
     s.show(q, 10, onPick);
+    vi.advanceTimersByTime(450);
     const b = s.root.querySelectorAll('.q-option')[1];
     press(b, 'pointerdown');
     press(b, 'click');

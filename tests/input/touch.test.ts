@@ -40,11 +40,21 @@ describe('attachInput', () => {
     expect(onLane).toHaveBeenCalledExactlyOnceWith(1);
   });
 
-  it('ignores a second finger or a palm', () => {
-    pointer(surface, 'pointerdown', 200, { primary: false, id: 2 });
-    pointer(surface, 'pointerup', 200, { primary: false, id: 2 });
-    expect(onPress).not.toHaveBeenCalled();
-    expect(onLane).not.toHaveBeenCalled();
+  it("counts a tap from the other hand as its own lane change, one lane per touch", () => {
+    pointer(surface, 'pointerdown', 200, { id: 1 });
+    pointer(surface, 'pointerdown', 800, { primary: false, id: 2 });
+    pointer(surface, 'pointerup', 800, { primary: false, id: 2 });
+    pointer(surface, 'pointerup', 200, { id: 1 });
+    expect(onLane.mock.calls).toEqual([[-1], [1]]);
+  });
+
+  it('keeps working while a palm rests on the screen', () => {
+    pointer(surface, 'pointerdown', 500, { id: 5 });
+    vi.advanceTimersByTime(CONFIG.input.tapFallbackMs + 10);
+    pointer(surface, 'pointerdown', 800, { primary: false, id: 6 });
+    pointer(surface, 'pointerup', 800, { primary: false, id: 6 });
+    expect(onLane).toHaveBeenCalledTimes(2);
+    expect(onLane).toHaveBeenLastCalledWith(1);
   });
 
   it('still moves once when the screen never reports the release', () => {
@@ -52,6 +62,15 @@ describe('attachInput', () => {
     vi.advanceTimersByTime(CONFIG.input.tapFallbackMs + 10);
     pointer(surface, 'pointerup', 200);
     expect(onLane).toHaveBeenCalledExactlyOnceWith(-1);
+  });
+
+  it('follows a slow swipe that is still moving when the fallback fires', () => {
+    pointer(surface, 'pointerdown', 200);
+    vi.advanceTimersByTime(150);
+    pointer(surface, 'pointermove', 320);
+    vi.advanceTimersByTime(CONFIG.input.tapFallbackMs);
+    pointer(surface, 'pointerup', 400);
+    expect(onLane).toHaveBeenCalledExactlyOnceWith(1);
   });
 
   it('ignores presses on interface buttons', () => {

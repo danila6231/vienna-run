@@ -38,3 +38,14 @@ export class QualityMonitor {
     return next;
   }
 }
+
+/**
+ * Render resolution for a quality level. Lower levels render fewer pixels even on a plain
+ * 100%-scaling screen (devicePixelRatio 1), which is what the booth PC will usually be.
+ */
+export function pixelRatioFor(level: QualityLevel, devicePixelRatio: number): number {
+  const base = Math.min(devicePixelRatio || 1, 2);
+  if (level === 'high') return base;
+  if (level === 'med') return base * 0.8;
+  return Math.min(base * 0.6, 0.75);
+}

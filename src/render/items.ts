@@ -4,11 +4,14 @@ import type { Run } from '../core/run';
 import { BAD_TYPES, GOOD_TYPES, type Item, type ItemType } from '../core/types';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
+import { fitSquare } from './sizing';
 
 export interface ItemsLayer {
   sync(run: Run, px: number): void;
   reset(): void;
   material(type: ItemType): THREE.SpriteMaterial;
+  /** Width ÷ height of the item's image, so other layers can size copies without stretching them. */
+  aspect(type: ItemType): number;
 }
 
 interface Obj {
@@ -22,6 +25,10 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
   const mats = Object.fromEntries(
     [...GOOD_TYPES, ...BAD_TYPES].map((t) => [t, new THREE.SpriteMaterial({ map: toTexture(art.get(`item-${t}`)), alphaTest: 0.3 })]),
   ) as Record<ItemType, THREE.SpriteMaterial>;
+  const aspects = Object.fromEntries([...GOOD_TYPES, ...BAD_TYPES].map((t) => {
+    const c = art.get(`item-${t}`);
+    return [t, c.width / c.height];
+  })) as Record<ItemType, number>;
   const blobMat = new THREE.MeshBasicMaterial({ map: toTexture(P.blobCanvas()), transparent: true, depthWrite: false });
   const blobGeo = new THREE.PlaneGeometry(1.5, 0.75);
   const pool: Obj[] = [];
@@ -49,22 +56,24 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
   };
   const place = (o: Obj, it: Item, r: number, px: number, t: number) => {
     const x = it.lane * laneWidth;
+    const box = fitSquare(aspects[it.type], SIZE);
     if (it.state === 'live') {
       o.sp.position.set(x, 1.3 + Math.sin(t * 3 + it.id) * 0.16, -r);
-      o.sp.scale.set(SIZE, SIZE, 1);
+      o.sp.scale.set(box.w, box.h, 1);
       o.sh.visible = true;
       o.sh.position.set(x, 0.045, -r);
     } else if (it.state === 'taken') {
       // Flies up onto the waiter's tray.
       const k = Math.min(1, it.t / 0.3);
       o.sp.position.set(x + (px + 0.5 - x) * k, 1.3 + 1.9 * k, -r * (1 - k));
-      o.sp.scale.set(SIZE - k, SIZE - k, 1);
+      const f = (SIZE - k) / SIZE;
+      o.sp.scale.set(box.w * f, box.h * f, 1);
       o.sh.visible = false;
       o.sp.visible = k < 1;
     } else {
       // Obstacle: puffs up and vanishes.
       const k = Math.min(1, it.t / 0.25);
-      o.sp.scale.set(SIZE * (1 + k * 0.8), SIZE * (1 + k * 0.8), 1);
+      o.sp.scale.set(box.w * (1 + k * 0.8), box.h * (1 + k * 0.8), 1);
       o.sp.position.set(x, 1.3 + k, -r);
       o.sh.visible = false;
       o.sp.visible = k < 1;
@@ -73,6 +82,7 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
 
   return {
     material: (t) => mats[t],
+    aspect: (t) => aspects[t],
     reset() {
       for (const id of [...live.keys()]) give(id);
     },

@@ -17,7 +17,7 @@ import bankJson from './data/questions.json';
 import { attachInput } from './input/touch';
 import * as P from './render/placeholders/paint';
 import { QualityMonitor } from './render/quality';
-import { createWorld } from './render/world';
+import { createWorld, type QualityLevel } from './render/world';
 import { AttractScreen } from './ui/attract';
 import { Fx } from './ui/fx';
 import { HowtoScreen } from './ui/howto';
@@ -57,7 +57,12 @@ async function boot(): Promise<void> {
   const fit = () => world.resize(stage.clientWidth, stage.clientHeight);
   fit();
   new ResizeObserver(fit).observe(stage);
-  if (params.quality) world.setQuality(params.quality);
+  // Low quality also drops the full-screen paper-grain blend, which costs compositing time on weak GPUs.
+  const applyQuality = (level: QualityLevel) => {
+    world.setQuality(level);
+    stage.classList.toggle('quality-low', level === 'low');
+  };
+  if (params.quality) applyQuality(params.quality);
   if (params.check) {
     runSelfCheck(stage, world, art);
     return;
@@ -95,7 +100,7 @@ async function boot(): Promise<void> {
     (dt) => game.update(dt),
     (sec) => {
       const level = monitor?.sample(sec);
-      if (level) world.setQuality(level);
+      if (level) applyQuality(level);
       game.render(Math.min(sec, 0.1) * params.speed);
     },
   );

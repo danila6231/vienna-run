@@ -8,11 +8,12 @@ export interface InputHandlers {
 }
 
 /**
- * Pointer + keyboard input. Only the primary pointer counts, so a second hand or a palm does nothing.
+ * Pointer + keyboard input. Every touch counts, but each touch moves exactly one lane: a new touch
+ * first settles any touch still pending, so two-handed play works and a resting palm moves at most once.
  * Cheap IR touch frames sometimes drop the release, so a press resolves on its own after `tapFallbackMs`.
  */
 export function attachInput(surface: HTMLElement, cfg: GameConfig['input'], h: InputHandlers): () => void {
-  let down: { p: Point; cx: number; id: number; timer: number; done: boolean } | null = null;
+  let down: { p: Point; last: Point; cx: number; id: number; timer: number; done: boolean } | null = null;
 
   const finish = (up: Point | null) => {
     if (!down || down.done) return;
@@ -21,22 +22,24 @@ export function attachInput(surface: HTMLElement, cfg: GameConfig['input'], h: I
     h.onLane(resolveGesture(down.p, up, down.cx, cfg.swipeMinPx));
   };
   const onDown = (e: PointerEvent) => {
-    if (!e.isPrimary) return;
     const target = e.target as Element | null;
     if (target?.closest?.('button, [data-ui]')) return;
-    if (down && !down.done) finish(null);
+    if (down && !down.done) finish(down.last);
     h.onPress();
     const r = surface.getBoundingClientRect();
-    down = {
-      p: { x: e.clientX, y: e.clientY },
-      cx: r.left + r.width / 2,
-      id: e.pointerId,
-      done: false,
-      timer: window.setTimeout(() => finish(null), cfg.tapFallbackMs),
-    };
+    const p = { x: e.clientX, y: e.clientY };
+    const gesture = { p, last: p, cx: r.left + r.width / 2, id: e.pointerId, done: false, timer: 0 };
+    // If the release never arrives, resolve from wherever the finger got to (a slow swipe still counts).
+    gesture.timer = window.setTimeout(() => {
+      if (down === gesture) finish(gesture.last);
+    }, cfg.tapFallbackMs);
+    down = gesture;
+  };
+  const onMove = (e: PointerEvent) => {
+    if (down && !down.done && e.pointerId === down.id) down.last = { x: e.clientX, y: e.clientY };
   };
   const onUp = (e: PointerEvent) => {
-    if (!e.isPrimary || !down || e.pointerId !== down.id) return;
+    if (!down || e.pointerId !== down.id) return;
     finish({ x: e.clientX, y: e.clientY });
   };
   const onKey = (e: KeyboardEvent) => {
@@ -55,10 +58,12 @@ export function attachInput(surface: HTMLElement, cfg: GameConfig['input'], h: I
   };
 
   surface.addEventListener('pointerdown', onDown);
+  surface.addEventListener('pointermove', onMove);
   surface.addEventListener('pointerup', onUp);
   window.addEventListener('keydown', onKey);
   return () => {
     surface.removeEventListener('pointerdown', onDown);
+    surface.removeEventListener('pointermove', onMove);
     surface.removeEventListener('pointerup', onUp);
     window.removeEventListener('keydown', onKey);
   };

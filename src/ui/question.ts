@@ -2,6 +2,7 @@ import type { Question } from '../core/types';
 import { el } from './dom';
 
 export class QuestionScreen {
+  static readonly GRACE_MS = 400;
   readonly root = el('div', 'screen question');
   private title = el('p', 'q-bonus');
   private text = el('h2', 'q-text');
@@ -9,6 +10,8 @@ export class QuestionScreen {
   private ringNum = el('span');
   private buttons: HTMLButtonElement[] = [];
   private onPick: ((index: number) => void) | null = null;
+  /** Answers are ignored until this time, so a lane tap that coincides with the question popping up can't pick one. */
+  private armedAt = 0;
 
   constructor(parent: HTMLElement) {
     const card = el('div', 'paper-card question-card');
@@ -43,6 +46,7 @@ export class QuestionScreen {
       b.disabled = false;
     });
     this.onPick = onPick;
+    this.armedAt = Date.now() + QuestionScreen.GRACE_MS;
     this.tick(1, 10);
     this.root.hidden = false;
   }
@@ -70,7 +74,7 @@ export class QuestionScreen {
 
   private pick(i: number): void {
     const cb = this.onPick;
-    if (!cb) return;
+    if (!cb || Date.now() < this.armedAt) return;
     this.onPick = null;
     cb(i);
   }

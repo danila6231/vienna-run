@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QualityMonitor } from '../../src/render/quality';
+import { pixelRatioFor, QualityMonitor } from '../../src/render/quality';
 
 const feed = (m: QualityMonitor, fps: number, seconds: number) => {
   const changes: string[] = [];
@@ -27,5 +27,17 @@ describe('QualityMonitor', () => {
   it('ignores the warm-up seconds', () => {
     const m = new QualityMonitor();
     expect(feed(m, 20, 2.5)).toEqual([]);
+  });
+});
+
+describe('pixelRatioFor', () => {
+  it('renders fewer pixels at each lower level, even on a 100%-scaling screen', () => {
+    expect(pixelRatioFor('high', 1)).toBe(1);
+    expect(pixelRatioFor('med', 1)).toBeCloseTo(0.8);
+    expect(pixelRatioFor('low', 1)).toBeCloseTo(0.6);
+  });
+  it('caps sharp screens at 2x and keeps low cheap there too', () => {
+    expect(pixelRatioFor('high', 3)).toBe(2);
+    expect(pixelRatioFor('low', 2)).toBeCloseTo(0.75);
   });
 });

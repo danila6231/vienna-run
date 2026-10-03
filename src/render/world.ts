@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
 import type { Run } from '../core/run';
 import { createItems } from './items';
+import { pixelRatioFor } from './quality';
 import { createLandmarks } from './landmarks';
 import { createRunner } from './runner';
 import { createSky } from './sky';
@@ -19,11 +20,9 @@ export interface World {
   setQuality(level: QualityLevel): void;
 }
 
-const PIXEL_RATIO: Record<QualityLevel, number> = { high: 2, med: 1.25, low: 1 };
-
 export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: number): World {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, PIXEL_RATIO.high));
+  renderer.setPixelRatio(pixelRatioFor('high', window.devicePixelRatio));
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.5, 600);
   const sky = createSky(scene, art);
@@ -69,7 +68,7 @@ export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: n
       return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 };
     },
     setQuality(level) {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, PIXEL_RATIO[level]));
+      renderer.setPixelRatio(pixelRatioFor(level, window.devicePixelRatio));
       renderer.setSize(w, h, false);
       street.setDetail(level !== 'low');
       sky.setDetail(level !== 'low');

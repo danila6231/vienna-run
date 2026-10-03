@@ -5,6 +5,7 @@ import type { GoodType } from '../core/types';
 import { toTexture } from './canvas';
 import type { ItemsLayer } from './items';
 import * as P from './placeholders/paint';
+import { fitSquare } from './sizing';
 
 export interface Runner {
   /** Draws the waiter for this frame and returns his x position in metres. */
@@ -75,13 +76,18 @@ export function createRunner(scene: THREE.Scene, art: ArtSet, items: ItemsLayer,
         }
         s.visible = true;
         s.material = items.material(type);
+        const box = fitSquare(items.aspect(type), 0.72);
+        s.scale.set(box.w, box.h, 1);
         const ox = lx + Math.sin(i * 2.3) * 0.05, oy = ly + i * 0.36;
         s.position.set(px + ox * ca - oy * sa, bob + ox * sa + oy * ca, 0.1);
       });
 
       if (run.tray.length < lastTray.length && run.stumble > 0) {
         falling.material.dispose();
-        falling.material = items.material(lastTray[lastTray.length - 1]).clone();
+        const fallen = lastTray[lastTray.length - 1];
+        falling.material = items.material(fallen).clone();
+        const fb = fitSquare(items.aspect(fallen), 0.72);
+        falling.scale.set(fb.w, fb.h, 1);
         fallT = 0;
         fallX = px + lx;
         fallY = bob + ly + (lastTray.length - 1) * 0.36;
