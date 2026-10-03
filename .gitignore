@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-offline/
+test-results/
+playwright-report/
+vienna-run-offline.zip
+.vercel/
+.DS_Store
