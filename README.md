@@ -23,8 +23,19 @@ and bombs, answer surprise questions for double points, and win a gift by score 
 `?check=1` booth self-check · `?autoplay=1` the bot plays whole rounds · `?speed=8` fast-forward ·
 `?seed=7` fixed item layout · `?quality=low|med|high` force graphics level · `?hidecursor=1` hide the mouse cursor (shown by default).
 
+## Staff settings
+On the start screen, **hold the top-left corner for 3 seconds**, then enter the PIN (default **2468**;
+change it in the menu). The menu sets:
+- **Difficulty:** Easy / Normal / Hard presets; round length, start and end speed, obstacles and treats
+  per round; "Random each round" or "Same for everyone".
+- **Points and gifts:** item points, the gift tiers, and whether players see gifts.
+- **Bonus questions:** on/off, how many per round, seconds to answer.
+- **Share code:** copy every setting except the PIN to another device.
+
+Settings are saved on each device and apply from the next round.
+
 ## Changing things
-- **Points, timings, gift tiers:** `src/config.ts`. After changing tiers, run `npm run simulate` to see how many players land in each tier.
+- **Points, difficulty, gift tiers:** use the staff settings menu. `src/config.ts` holds the defaults; `npm run simulate` shows the score spread for each preset.
 - **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.

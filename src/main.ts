@@ -2,16 +2,19 @@ import '@fontsource/federo';
 import '@fontsource/albert-sans/400.css';
 import '@fontsource/albert-sans/600.css';
 import './ui/styles.css';
+import './ui/staff.css';
 import { Game } from './app/game';
 import { installKiosk } from './app/kiosk';
 import { FixedStepper, startLoop, type Loop } from './app/loop';
 import { parseParams } from './app/params';
+import { loadSettings, saveSettings } from './app/settingsStore';
 import { readJson, writeJson } from './app/storage';
 import { applyUpdateIfReady, setupUpdates } from './app/updates';
 import { installWatchdog, shouldRefresh } from './app/watchdog';
 import { loadArt } from './assets/manifest';
 import { CONFIG } from './config';
 import { validateBank } from './core/questions';
+import { buildConfig, featuresOf } from './core/settings';
 import { BAD_TYPES, GOOD_TYPES, type ItemType } from './core/types';
 import bankJson from './data/questions.json';
 import { attachInput } from './input/touch';
@@ -25,8 +28,12 @@ import { Hud } from './ui/hud';
 import { QuestionScreen } from './ui/question';
 import { ResultsScreen } from './ui/results';
 import { runSelfCheck } from './ui/selfcheck';
+import { attachCornerHold } from './ui/staff/cornerHold';
+import { PinPad } from './ui/staff/pinPad';
+import { SettingsPanel } from './ui/staff/settingsPanel';
 
 const RECENT_KEY = 'vienna-run:recent-questions';
+const CORNER_HOLD_MS = 3000;
 const isRecent = (v: unknown): v is string[][] => Array.isArray(v) && v.every((r) => Array.isArray(r) && r.every((x) => typeof x === 'string'));
 
 async function boot(): Promise<void> {
@@ -68,6 +75,8 @@ async function boot(): Promise<void> {
     return;
   }
 
+  let settings = loadSettings();
+
   const icons = Object.fromEntries([...GOOD_TYPES, ...BAD_TYPES].map((t) => [t, art.get(`item-${t}`).toDataURL()])) as Record<ItemType, string>;
   const ui = {
     hud: new Hud(stage, 'Stephansplatz → Riesenrad'),
@@ -79,7 +88,9 @@ async function boot(): Promise<void> {
   };
   const bootedAt = performance.now();
   const game = new Game({
-    cfg: CONFIG,
+    cfg: buildConfig(settings),
+    features: featuresOf(settings),
+    giftUrl: (tier) => art.url(`gift-${tier}`),
     bank: validateBank(bankJson),
     world,
     ui,
@@ -92,33 +103,70 @@ async function boot(): Promise<void> {
     },
   });
 
-  attachInput(stage, CONFIG.input, { onLane: (d) => game.lane(d), onPress: () => game.press() });
+  // Staff settings: hold the top-left corner of the start screen, then the PIN. The game pauses meanwhile.
+  let staffOpen = false;
+  const pinPad = new PinPad(stage);
+  const panel = new SettingsPanel(stage, {
+    onSave: (s) => {
+      settings = s;
+      saveSettings(s);
+      game.configure(buildConfig(s), featuresOf(s));
+    },
+    onClose: () => {
+      staffOpen = false;
+    },
+  });
+  attachCornerHold(ui.attract.root, CORNER_HOLD_MS, () => {
+    if (staffOpen || game.flow.screen !== 'attract') return;
+    staffOpen = true;
+    pinPad.open({
+      check: (pin) => pin === settings.pin,
+      onSuccess: () => panel.open(settings),
+      onCancel: () => {
+        staffOpen = false;
+      },
+    });
+  });
+
+  attachInput(stage, CONFIG.input, {
+    onLane: (d) => {
+      if (!staffOpen) game.lane(d);
+    },
+    onPress: () => {
+      if (!staffOpen) game.press();
+    },
+  });
   const monitor = params.quality ? null : new QualityMonitor('high');
   const stepper = new FixedStepper(1 / 60, params.speed);
   loop = startLoop(
     stepper,
-    (dt) => game.update(dt),
+    (dt) => {
+      if (!staffOpen) game.update(dt);
+    },
     (sec) => {
       const level = monitor?.sample(sec);
       if (level) applyQuality(level);
       game.render(Math.min(sec, 0.1) * params.speed);
     },
   );
-  if (params.autoplay) exposeDebugHook(game, canvas);
+  exposeDebugHook(game, canvas);
 }
 
-/** Read by the Playwright smoke and soak tests (autoplay mode only). */
+/** Read-only state for the Playwright tests. */
 function exposeDebugHook(game: Game, canvas: HTMLCanvasElement): void {
-  const hook = { cycles: 0, screen: 'attract' as string, errors: [] as string[], contextLost: false };
+  const hook = { cycles: 0, screen: 'attract' as string, errors: [] as string[], contextLost: false, baseSpeed: 0 };
   (window as unknown as { __vr: typeof hook }).__vr = hook;
   window.addEventListener('error', (e) => hook.errors.push(e.message));
   canvas.addEventListener('webglcontextlost', () => {
     hook.contextLost = true;
   });
-  window.setInterval(() => {
+  const sync = () => {
     hook.cycles = game.cycles;
     hook.screen = game.flow.screen;
-  }, 250);
+    hook.baseSpeed = game.run.cfg.baseSpeed;
+  };
+  sync();
+  window.setInterval(sync, 250);
 }
 
 void boot();

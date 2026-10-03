@@ -23,14 +23,17 @@ Do these on the booth PC on setup day, in order.
 9. Run the self-check: open the game with `?check=1` (see `OFFLINE-README.txt`).
    - Touch all 9 squares, especially the corners. All must turn green.
    - Frame rate should read **50 fps or more** after a few seconds (lower is OK: the game reduces detail by itself).
-10. Press **Start the game** and play **3 full rounds** yourself: tap both sides, answer a question,
+10. **Settings:** press **Start the game** to leave the self-check. On the start screen, hold the top-left corner for 3 s and enter the team PIN
+    (default 2468; change it and write it down). Load the agreed difficulty with **Share code →
+    Load code** (paste the code from the team chat), check the values, press **Save**.
+11. Play **3 full rounds** yourself: tap both sides, answer a question,
     let one question time out, hold "Hold for next player". While playing, also try the things visitors do:
     - play with **both hands** (left hand taps left, right hand taps right, overlapping);
     - a **slow swipe** across the screen (it should move the way you swiped);
     - **rest a palm** on the screen edge, then keep tapping with the other hand (taps must still work);
     - keep **tapping right as a bonus question appears** (the first moment's taps must not pick an answer);
     - a **quick tap** on "Hold for next player" (it must not skip the results).
-11. Optional: Startup folder (`Win+R` → `shell:startup`), drop a shortcut to the launcher there,
+12. Optional: Startup folder (`Win+R` → `shell:startup`), drop a shortcut to the launcher there,
     so the game comes back by itself after a restart.
 
 ## During the event
