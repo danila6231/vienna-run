@@ -24,4 +24,18 @@ describe('installKiosk', () => {
   it('hides the cursor', () => {
     expect(document.body.classList.contains('hide-cursor')).toBe(true);
   });
+  it('lets people select and paste inside text fields only', () => {
+    const field = document.createElement('input');
+    document.body.append(field);
+    const inField = new Event('selectstart', { bubbles: true, cancelable: true });
+    field.dispatchEvent(inField);
+    expect(inField.defaultPrevented).toBe(false);
+    const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    field.dispatchEvent(menu);
+    expect(menu.defaultPrevented).toBe(false);
+    const outside = new Event('selectstart', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(outside);
+    expect(outside.defaultPrevented).toBe(true);
+    field.remove();
+  });
 });

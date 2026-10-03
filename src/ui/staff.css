@@ -1,0 +1,45 @@
+/* Staff screens: corner hold, PIN pad, settings. English, team only. */
+.corner-hold { position: absolute; left: 0; top: 0; width: 12%; height: 12%; z-index: 3; }
+.staff-screen { position: absolute; inset: 0; z-index: 8; background: rgba(29, 20, 17, 0.72); font-family: var(--font-body); color: var(--ink); }
+.pin-pad { display: grid; place-items: center; }
+.pin-card { padding: 3cqmin 4cqmin; display: grid; gap: 1.6cqmin; justify-items: center; }
+.pin-card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 5cqmin; }
+.pin-card.wrong { animation: shake 0.4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-1.6cqmin); } 40%, 80% { transform: translateX(1.6cqmin); } }
+.pin-dots { display: flex; gap: 2cqmin; }
+.pin-dots i { width: 2.6cqmin; height: 2.6cqmin; border-radius: 50%; border: 0.4cqmin solid var(--ink); }
+.pin-dots i.on { background: var(--ink); }
+.pin-keys { display: grid; grid-template-columns: repeat(3, 12cqmin); gap: 1.4cqmin; }
+.pin-key { font: 600 4.4cqmin var(--font-body); height: 10cqmin; border-radius: 1cqmin; border: 0.3cqmin solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.pin-key.small { font-size: 2.4cqmin; }
+.settings { display: grid; grid-template-rows: auto 1fr auto; background: var(--paper); }
+.st-head { padding: 2cqmin 4cqmin 1cqmin; border-bottom: 0.2cqmin solid var(--paper-2); }
+.st-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 4.4cqmin; }
+.st-body { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; padding: 1cqmin 4cqmin 3cqmin; font-size: 2.3cqmin; }
+.st-section { max-width: 150cqmin; margin: 0 auto; padding: 1.6cqmin 0; border-bottom: 0.2cqmin solid var(--paper-2); }
+.st-section h3 { margin: 0 0 1cqmin; font-family: var(--font-display); font-weight: 400; font-size: 3.4cqmin; color: var(--red-ink); }
+.st-row { display: grid; grid-template-columns: 34cqmin 1fr; align-items: center; gap: 2cqmin; padding: 0.7cqmin 0; }
+.st-controls { display: flex; flex-wrap: wrap; gap: 1cqmin; align-items: center; }
+.st-unit { color: var(--muted); min-width: 6cqmin; }
+.st-note { margin: 0.4cqmin 0; color: var(--muted); font-size: 2cqmin; line-height: 1.4; }
+.st-btn, .st-step, .st-toggle, .st-choice button { font: 600 2.3cqmin var(--font-body); min-height: 6cqmin; padding: 0 2.4cqmin; border-radius: 0.8cqmin; border: 0.25cqmin solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.st-step { width: 6cqmin; padding: 0; font-size: 3.2cqmin; }
+.st-btn.small { min-height: 5cqmin; font-size: 2cqmin; }
+.st-btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+.st-btn.danger { border-color: #b3262d; color: #b3262d; }
+.st-btn:disabled, .st-step:disabled { opacity: 0.45; cursor: default; }
+.st-toggle.on, .st-choice .on { background: var(--green); border-color: var(--green); color: #fff; }
+.st-choice { display: flex; flex-wrap: wrap; gap: 1cqmin; align-items: center; }
+.st-chip { padding: 0.8cqmin 2cqmin; border-radius: 99cqmin; border: 0.25cqmin dashed var(--muted); color: var(--muted); }
+.st-chip.on { border-style: solid; border-color: var(--red-ink); color: var(--red-ink); }
+.st-num, .st-text, .st-code { font: 500 2.4cqmin var(--font-body); min-height: 6cqmin; padding: 0 1.4cqmin; border-radius: 0.8cqmin; border: 0.25cqmin solid var(--ink); background: #fff; color: var(--ink); }
+.st-num { width: 14cqmin; text-align: center; }
+.st-text { width: 36cqmin; }
+.st-code { display: block; width: 100%; margin: 0.6cqmin 0; padding: 1cqmin 1.4cqmin; font-family: ui-monospace, monospace; font-size: 1.9cqmin; resize: vertical; }
+.st-tiers { display: grid; gap: 1cqmin; }
+.st-tier { display: flex; gap: 1cqmin; align-items: center; }
+.st-foot { padding: 1.4cqmin 4cqmin 2cqmin; border-top: 0.2cqmin solid var(--paper-2); display: grid; gap: 0.8cqmin; }
+.st-problems { margin: 0; padding-left: 3cqmin; color: #b3262d; font-weight: 600; font-size: 2.2cqmin; }
+.st-problems:empty, .st-message:empty { display: none; }
+.st-message { margin: 0; color: var(--green); font-weight: 600; font-size: 2.2cqmin; }
+.st-actions { display: flex; gap: 1.4cqmin; justify-content: flex-end; }

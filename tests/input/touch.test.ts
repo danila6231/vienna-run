@@ -86,4 +86,16 @@ describe('attachInput', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
     expect(onLane).toHaveBeenCalledExactlyOnceWith(-1);
   });
+  it('ignores keys typed into a text field or aimed at a button', () => {
+    const field = document.createElement('input');
+    const button = document.createElement('button');
+    document.body.append(field, button);
+    for (const target of [field, button]) {
+      for (const key of ['a', 'd', ' ', 'Enter', 'ArrowLeft']) target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    }
+    expect(onLane).not.toHaveBeenCalled();
+    expect(onPress).not.toHaveBeenCalled();
+    field.remove();
+    button.remove();
+  });
 });

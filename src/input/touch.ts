@@ -12,6 +12,10 @@ export interface InputHandlers {
  * first settles any touch still pending, so two-handed play works and a resting palm moves at most once.
  * Cheap IR touch frames sometimes drop the release, so a press resolves on its own after `tapFallbackMs`.
  */
+/** Keys typed into a field or aimed at an on-screen control (name entry, settings, PIN) are not game input. */
+const isControl = (t: EventTarget | null): boolean =>
+  t instanceof Element && t.closest('input, textarea, select, button, [contenteditable="true"], [data-ui]') !== null;
+
 export function attachInput(surface: HTMLElement, cfg: GameConfig['input'], h: InputHandlers): () => void {
   let down: { p: Point; last: Point; cx: number; id: number; timer: number; done: boolean } | null = null;
 
@@ -43,7 +47,7 @@ export function attachInput(surface: HTMLElement, cfg: GameConfig['input'], h: I
     finish({ x: e.clientX, y: e.clientY });
   };
   const onKey = (e: KeyboardEvent) => {
-    if (e.repeat) return;
+    if (e.repeat || isControl(e.target)) return;
     if (e.key === 'ArrowLeft' || e.key === 'a') {
       h.onPress();
       h.onLane(-1);
