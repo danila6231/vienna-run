@@ -7,6 +7,7 @@ import { Bot, BOT_SKILLS } from './core/bot';
 import { createRng } from './core/rng';
 import { Run } from './core/run';
 import { createWorld } from './render/world';
+import { attachInput } from './input/touch';
 
 async function boot(): Promise<void> {
   document.body.style.margin = '0';
@@ -20,12 +21,20 @@ async function boot(): Promise<void> {
   window.addEventListener('resize', fit);
   let run = new Run({ seed: 1 });
   let bot = new Bot(createRng(2), BOT_SKILLS.skilled);
+  let manual = false;
+  attachInput(document.body, CONFIG.input, {
+    onLane: (d) => {
+      manual = true;
+      run.move(d);
+    },
+    onPress: () => undefined,
+  });
   let last = performance.now();
   const frame = (now: number) => {
     requestAnimationFrame(frame);
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
     last = now;
-    bot.step(run, dt);
+    if (!manual) bot.step(run, dt);
     for (const e of run.update(dt)) if (e.kind === 'question') run.answer(true);
     if (run.finished && run.speed < 1) {
       run = new Run({ seed: Math.floor(Math.random() * 1e9) });
