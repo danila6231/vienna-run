@@ -9,6 +9,13 @@ export default defineConfig({
     viewport: { width: 1600, height: 900 },
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--enable-precise-memory-info'] },
   },
-  webServer: { command: 'npm run build && npm run preview', url: 'http://localhost:4173', reuseExistingServer: true, timeout: 180_000 },
+  webServer: {
+    command: 'npm run build && npm run preview',
+    url: 'http://localhost:4173',
+    reuseExistingServer: true,
+    timeout: 180_000,
+    // A fake Supabase address: the leaderboard e2e test intercepts it. The real one only exists on Vercel.
+    env: { NEXT_PUBLIC_SUPABASE_URL: 'https://vr-e2e.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'e2e-public-key' },
+  },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
 });

@@ -43,3 +43,10 @@
 .st-problems:empty, .st-message:empty { display: none; }
 .st-message { margin: 0; color: var(--green); font-weight: 600; font-size: 2.2cqmin; }
 .st-actions { display: flex; gap: 1.4cqmin; justify-content: flex-end; }
+.st-subhead { margin: 2cqmin 0 0.4cqmin; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 2.8cqmin; }
+.st-status { font-weight: 600; }
+.st-confirm { display: flex; flex-wrap: wrap; gap: 1cqmin; align-items: center; }
+.st-log { display: grid; gap: 0.6cqmin; max-height: 60cqmin; overflow-y: auto; touch-action: pan-y; }
+.st-logrow { display: grid; grid-template-columns: 16cqmin 8cqmin 18cqmin 1fr 18cqmin auto; gap: 1.2cqmin; align-items: center; padding: 0.6cqmin 1cqmin; border-radius: 0.5cqmin; background: #fff; font-size: 2cqmin; }
+.st-ok { color: var(--green); font-weight: 600; }
+.st-wait { color: var(--red-ink); font-weight: 600; }

@@ -1,9 +1,11 @@
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 test.beforeAll(() => {
-  execSync('npm run build:offline', { stdio: 'inherit' });
+  // Even with Supabase details in the environment, the USB copy must not contain them.
+  execSync('npm run build:offline', { stdio: 'inherit', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: 'https://vr-e2e.supabase.co', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'e2e-public-key' } });
 });
 
 test('the USB single-file copy runs from disk with no network at all', async ({ page, context }) => {
@@ -16,4 +18,7 @@ test('the USB single-file copy runs from disk with no network at all', async ({ 
   await page.waitForFunction(() => (window as any).__vr?.cycles >= 1, null, { timeout: 180_000 });
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
+  const html = readFileSync('dist-offline/index.html', 'utf8');
+  expect(html).not.toContain('vr-e2e');
+  expect(html).not.toContain('e2e-public-key');
 });

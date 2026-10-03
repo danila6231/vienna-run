@@ -6,4 +6,6 @@ Vienna Run: offline copy
 4. Booth check: open index.html with ?check=1 at the end of the address
    (or press Alt+F4, then run: msedge "C:\vienna-run\index.html?check=1").
 
+The leaderboard in this copy stays on this PC (it does not upload).
+
 No internet is needed. Nothing is installed.

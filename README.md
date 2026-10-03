@@ -40,6 +40,22 @@ player; the game returns to Vietnamese after every round. Texts live in `src/i18
 questions (both languages) in `src/data/questions.json`. The Vietnamese texts were machine-written:
 **have a native speaker review them before the event.**
 
+## Leaderboard
+Players can save a code name (A–Z, 0–9, up to 12 characters) on the results screen. The start screen
+shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
+
+- **Offline first:** every round is saved on the device, then uploaded to Supabase in the background.
+  With no internet the game plays normally, the board shows the last downloaded copy plus this
+  device's own scores, and queued rounds upload by themselves when the connection returns.
+- **Database:** table `public.vienna_run_scores` in the `supabase-green-river` database (Vercel →
+  Storage). Each Vercel deploy runs `scripts/migrate-db.ts` (`npm run vercel-build`), which creates the
+  table and its rules if needed. The public key may only add and read rows.
+- **Board names:** each device shows one board (settings → Leaderboard). Use `booth` on the booth PC
+  and `test` on team laptops. "Clear leaderboard" switches to a fresh board (`booth-2`, …); old scores
+  stay in the database.
+- **Score log:** settings → Leaderboard lists every round on this device, with Export CSV.
+- **USB copy:** built without Supabase details, so its leaderboard stays on that PC.
+
 ## Changing things
 - **Points, difficulty, gift tiers:** use the staff settings menu. `src/config.ts` holds the defaults; `npm run simulate` shows the score spread for each preset.
 - **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.
