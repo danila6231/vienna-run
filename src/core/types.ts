@@ -35,3 +35,5 @@ export interface Question {
   options: [string, string, string];
   answer: 0 | 1 | 2;
 }
+export type Lang = 'vi' | 'en';
+export const LANGS: readonly Lang[] = ['vi', 'en'];

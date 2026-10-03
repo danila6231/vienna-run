@@ -1,6 +1,8 @@
 import '@fontsource/federo';
-import '@fontsource/albert-sans/400.css';
-import '@fontsource/albert-sans/600.css';
+import '@fontsource/josefin-sans/400.css';
+import '@fontsource/josefin-sans/600.css';
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/600.css';
 import './ui/styles.css';
 import './ui/staff.css';
 import { Game } from './app/game';

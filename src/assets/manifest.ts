@@ -86,10 +86,11 @@ async function loadDesignerCanvas(id: string, url: string): Promise<HTMLCanvasEl
   return f.edge > 0 ? P.paperEdge(c, edgeRadius(f.edge, c.width, c.height), '#fffaf0', f.shadow ? 'rgba(60,35,20,0.32)' : '') : c;
 }
 
-/** Loads fonts (placeholder signs use Federo), then every designer file; broken files fall back to placeholders. */
+/** Loads fonts (Josefin Sans and Be Vietnam Pro for the screens, Federo for the placeholder signs), then every designer file; broken files fall back to placeholders. */
 export async function loadArt(): Promise<ArtSet> {
   await Promise.race([
-    Promise.all(['40px Federo', '24px "Albert Sans"'].map((f) => document.fonts.load(f))),
+    // The sample text pulls in the Vietnamese subsets too, so accented letters never flash in a fallback font.
+    Promise.all(['40px Federo', '600 40px "Josefin Sans"', '24px "Be Vietnam Pro"', '600 24px "Be Vietnam Pro"'].map((f) => document.fonts.load(f, 'Điểm của bạn ạ ố'))),
     new Promise((resolve) => setTimeout(resolve, 2500)),
   ]).catch(() => undefined);
 
