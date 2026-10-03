@@ -50,7 +50,7 @@ export const LIMITS = {
   timeLimit: [5, 15],
 } as const;
 
-const BOARD_RE = /^[a-z0-9-]{1,24}$/;
+export const BOARD_RE = /^[a-z0-9-]{1,24}$/;
 const PIN_RE = /^\d{4}$/;
 
 export function defaultSettings(): Settings {
