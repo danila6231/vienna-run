@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Game, type GameUi, type GameWorld } from '../../src/app/game';
+import { Game, type GameUi, type GameWorld, type RoundRecord } from '../../src/app/game';
 import { CONFIG } from '../../src/config';
 import { applyPreset, buildConfig, defaultSettings } from '../../src/core/settings';
 import { validateBank } from '../../src/core/questions';
@@ -18,7 +18,7 @@ function fakes() {
     attract: { show: vi.fn(), hide: vi.fn(), configure: vi.fn() },
     howto: { showHowto: vi.fn(), showCount: vi.fn(), hide: vi.fn() },
     question: { show: vi.fn(), tick: vi.fn(), reveal: vi.fn(), hide: vi.fn() },
-    results: { show: vi.fn(), hide: vi.fn() },
+    results: { show: vi.fn(), hide: vi.fn(), busy: vi.fn(() => false) },
   } satisfies GameUi;
   return { world, ui };
 }
@@ -155,5 +155,48 @@ describe('Game', () => {
     const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 3, autoplay: true, i18n: new I18n('vi') });
     clock(game).run(80);
     expect(ui.fx.banner).toHaveBeenCalledWith('Về đích!', expect.stringMatching(/^\d+ điểm$/), CONFIG.flow.finishSeconds);
+  });
+  function roundLog() {
+    const records: RoundRecord[] = [];
+    const finalized: string[] = [];
+    return { records, finalized, log: { addRound: (r: RoundRecord) => { records.push(r); return `id-${records.length}`; }, finalize: (id: string) => { finalized.push(id); } } };
+  }
+
+  it('logs every round once and queues it when the results screen closes', () => {
+    const { world, ui } = fakes();
+    const scores = roundLog();
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 5, scores: scores.log, features: { showGifts: false, leaderboard: true } });
+    game.press();
+    clock(game).run(200);
+    expect(game.flow.screen).toBe('attract');
+    expect(scores.records).toHaveLength(1);
+    expect(scores.records[0]).toMatchObject({ lang: 'vi', questionsOn: true });
+    expect(scores.records[0].score).toBeGreaterThanOrEqual(0);
+    expect(((ui.results.show as ReturnType<typeof vi.fn>).mock.calls[0][0] as ResultsInfo).entryId).toBe('id-1');
+    expect(scores.finalized).toEqual(['id-1']);
+  });
+
+  it('still logs rounds, without name entry, while the leaderboard is off', () => {
+    const { world, ui } = fakes();
+    const scores = roundLog();
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 5, scores: scores.log });
+    game.press();
+    clock(game).run(200);
+    expect(scores.records).toHaveLength(1);
+    expect(((ui.results.show as ReturnType<typeof vi.fn>).mock.calls[0][0] as ResultsInfo).entryId).toBeNull();
+  });
+
+  it('keeps the results screen while a name is being typed, then resets by itself', () => {
+    const { world, ui } = fakes();
+    let typing = true;
+    (ui.results.busy as ReturnType<typeof vi.fn>).mockImplementation(() => typing);
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 5 });
+    game.press();
+    const c = clock(game);
+    c.run(200);
+    expect(game.flow.screen).toBe('results');
+    typing = false;
+    c.run(CONFIG.flow.resultsFallbackSeconds + 1);
+    expect(game.flow.screen).toBe('attract');
   });
 });

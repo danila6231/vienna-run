@@ -44,6 +44,12 @@ const en = {
   'board.offline': 'Offline · showing the saved copy',
   'board.open': 'Leaderboard',
   'board.close': 'Close',
+  'results.nameHint': 'Put your code name on the leaderboard (A–Z, 0–9, up to 12)',
+  'results.namePlaceholder': 'Your name',
+  'results.save': 'Save',
+  'results.rank': "You're #{rank} today!",
+  'results.saved': 'Saved!',
+  'results.viewBoard': 'See the leaderboard',
 };
 
 export type StringKey = keyof typeof en;
@@ -88,6 +94,12 @@ const vi: Record<StringKey, string> = {
   'board.offline': 'Đang ngoại tuyến · hiển thị bản đã lưu',
   'board.open': 'Bảng xếp hạng',
   'board.close': 'Đóng',
+  'results.nameHint': 'Nhập biệt danh để lên bảng xếp hạng (chữ không dấu, số, tối đa 12 ký tự)',
+  'results.namePlaceholder': 'Tên của bạn',
+  'results.save': 'Lưu',
+  'results.rank': 'Bạn đứng thứ #{rank} hôm nay!',
+  'results.saved': 'Đã lưu!',
+  'results.viewBoard': 'Xem bảng xếp hạng',
 };
 
 export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, vi };

@@ -5,9 +5,9 @@ import { createRng, randomSeed } from '../core/rng';
 import { Run } from '../core/run';
 import { tierIndex } from '../core/scoring';
 import type { Features } from '../core/settings';
-import type { Question, RunEvent } from '../core/types';
-import { formatPoints } from '../ui/labels';
+import type { Lang, Question, RunEvent } from '../core/types';
 import { I18n } from '../i18n/i18n';
+import { formatPoints } from '../ui/labels';
 import type { GiftInfo, ResultsInfo } from '../ui/results';
 import { audio } from './audio';
 import { Flow, type Screen } from './flow';
@@ -38,12 +38,25 @@ export interface GameUi {
     reveal(correct: number, picked: number | null): void;
     hide(): void;
   };
-  results: { show(info: ResultsInfo, onDone: () => void): void; hide(): void };
+  results: { show(info: ResultsInfo, onDone: () => void): void; hide(): void; busy(): boolean };
 }
 
 export interface RecentStore {
   read(): string[][];
   write(history: string[][]): void;
+}
+
+/** What the game records about a finished round (the difficulty preset is added by the caller). */
+export interface RoundRecord {
+  score: number;
+  lang: Lang;
+  questionsOn: boolean;
+}
+
+export interface RoundLog {
+  addRound(r: RoundRecord): string;
+  /** The results screen closed: the round can be uploaded. */
+  finalize(id: string): void;
 }
 
 export interface GameOptions {
@@ -61,6 +74,8 @@ export interface GameOptions {
   /** The bot plays whole rounds: presses start, answers, and dismisses results by itself. */
   autoplay?: boolean;
   recent?: RecentStore;
+  /** Where finished rounds are logged; left out in autoplay so test rounds never reach the leaderboard. */
+  scores?: RoundLog;
   /** Called every time the attract screen opens, with the number of finished rounds. */
   onAttract?: (cycles: number) => void;
 }
@@ -84,6 +99,7 @@ export class Game {
   private picked: number | null = null;
   private goTimer = 0;
   private autoTimer = 0;
+  private entryId: string | null = null;
 
   constructor(private readonly o: GameOptions) {
     this.i18n = o.i18n ?? new I18n('vi');
@@ -147,6 +163,7 @@ export class Game {
         this.run.update(dt); // coast to a stop under the banner
         break;
       case 'results':
+        if (ui.results.busy()) this.flow.holdResults();
         if (this.o.autoplay && this.flow.elapsed > 2) this.flow.nextPlayer();
         break;
       default:
@@ -220,6 +237,8 @@ export class Game {
         ui.attract.show();
         if (prev === 'results') {
           this.cycles++;
+          if (this.entryId) this.o.scores?.finalize(this.entryId);
+          this.entryId = null;
           this.i18n.set('vi');
         }
         this.o.onAttract?.(this.cycles);
@@ -269,6 +288,7 @@ export class Game {
         if (this.current) ui.question.reveal(this.current.answer, this.picked);
         break;
       case 'finish':
+        this.entryId = this.o.scores?.addRound({ score: this.run.score, lang: this.i18n.lang, questionsOn: cfg.questions.perRun > 0 }) ?? null;
         audio.play('finish');
         ui.fx.banner(this.i18n.t('finish.title'), this.i18n.t('finish.points', { score: this.run.score }), cfg.flow.finishSeconds);
         ui.fx.confetti();
@@ -285,7 +305,7 @@ export class Game {
           const index = tierIndex(score, cfg.tiers);
           gift = { tiers: cfg.tiers, index, url: this.o.giftUrl?.(index) ?? null };
         }
-        ui.results.show({ score, gift }, () => this.flow.nextPlayer());
+        ui.results.show({ score, gift, entryId: this.features.leaderboard ? this.entryId : null }, () => this.flow.nextPlayer());
         break;
       }
     }

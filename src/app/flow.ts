@@ -76,6 +76,11 @@ export class Flow {
     if (this.screen === 'results') this.go('attract');
   }
 
+  /** Keeps the results screen from timing out (someone is typing a name). */
+  holdResults(): void {
+    if (this.screen === 'results') this.elapsed = 0;
+  }
+
   get questionRemaining(): number {
     return this.screen === 'question' ? Math.max(0, this.cfg.questions.timeLimit - this.elapsed) : 0;
   }

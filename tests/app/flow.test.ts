@@ -95,4 +95,19 @@ describe('Flow', () => {
     tick(5);
     expect(answered).toHaveBeenCalledExactlyOnceWith(false);
   });
+  it('holds the results screen open while asked to', () => {
+    const { flow, tick } = setup();
+    flow.press();
+    tick(6.1);
+    flow.runFinished();
+    tick(CONFIG.flow.finishSeconds);
+    expect(flow.screen).toBe('results');
+    for (let i = 0; i < 3; i++) {
+      tick(CONFIG.flow.resultsFallbackSeconds / 2);
+      flow.holdResults();
+    }
+    expect(flow.screen).toBe('results');
+    tick(CONFIG.flow.resultsFallbackSeconds);
+    expect(flow.screen).toBe('attract');
+  });
 });

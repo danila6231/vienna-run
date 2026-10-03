@@ -1,5 +1,6 @@
 import type { Tier } from '../config';
 import type { I18n } from '../i18n/i18n';
+import { cleanNameInput, finalName } from '../scores/names';
 import { el } from './dom';
 
 export interface GiftInfo {
@@ -14,6 +15,15 @@ export interface ResultsInfo {
   score: number;
   /** Null while gifts are switched off. */
   gift: GiftInfo | null;
+  /** The logged round a code name can be saved to; null or missing hides name entry. */
+  entryId?: string | null;
+}
+
+export interface NameEntry {
+  /** Saves the code name: today's place (1–10), null when saved outside the top 10, or false when refused. */
+  save(id: string, name: string): number | null | false;
+  /** Opens the full leaderboard with this round highlighted. */
+  open(id: string): void;
 }
 
 /** End of a round: the score, the prize when gifts are on, and a hold-to-reset button for staff. */
@@ -28,12 +38,24 @@ export class ResultsScreen {
   private holdFill = el('i');
   private holdTimer = 0;
   private onDone: (() => void) | null = null;
+  /** Without a key press for this long, a half-typed name stops holding the screen open. */
+  static readonly TYPING_GRACE_MS = 20_000;
+  private nameBox = el('div', 'r-namebox');
+  private nameHint = el('p', 'r-name-hint');
+  private nameInput = el('input', 'r-name');
+  private saveButton = el('button', 'r-save');
+  private nameMsg = el('p', 'r-name-msg');
+  private viewButton = el('button', 'r-view');
+  private entryId: string | null = null;
+  private saved = false;
+  private focused = false;
+  private lastTyped = 0;
 
-  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly holdMs: number) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly holdMs: number, private readonly names: NameEntry | null = null) {
     const card = el('div', 'paper-card results-card');
     const scoreBox = el('div', 'r-scorebox');
     scoreBox.append(this.scoreLabel, this.score);
-    card.append(scoreBox, this.thanks, this.giftBox);
+    card.append(scoreBox, this.thanks, this.nameBox, this.giftBox);
     this.hold.type = 'button';
     this.hold.append(this.holdFill, this.holdLabel);
     const start = (e: Event) => {
@@ -47,6 +69,41 @@ export class ResultsScreen {
       if (e.key === 'Enter' || e.key === ' ') this.startHold();
     });
     this.hold.addEventListener('keyup', cancel);
+    const input = this.nameInput;
+    input.type = 'text';
+    input.maxLength = 12;
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.lang = 'en';
+    input.enterKeyHint = 'done';
+    input.addEventListener('input', () => {
+      const clean = cleanNameInput(input.value);
+      if (clean !== input.value) input.value = clean;
+      this.lastTyped = Date.now();
+      this.saveButton.disabled = finalName(clean) === null;
+    });
+    input.addEventListener('focus', () => {
+      this.focused = true;
+      this.lastTyped = Date.now();
+    });
+    input.addEventListener('blur', () => {
+      this.focused = false;
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.saveName();
+      }
+    });
+    this.saveButton.type = 'button';
+    this.saveButton.addEventListener('click', () => this.saveName());
+    this.viewButton.type = 'button';
+    this.viewButton.addEventListener('click', () => {
+      if (this.entryId) this.names?.open(this.entryId);
+    });
+    const field = el('div', 'r-namefield');
+    field.append(input, this.saveButton);
+    this.nameBox.append(this.nameHint, field, this.nameMsg, this.viewButton);
     this.root.append(card, this.hold);
     this.root.dataset.ui = '';
     this.root.hidden = true;
@@ -58,6 +115,17 @@ export class ResultsScreen {
   show(info: ResultsInfo, onDone: () => void): void {
     this.score.textContent = String(info.score);
     this.showGift(info.gift);
+    this.entryId = this.names ? info.entryId ?? null : null;
+    this.saved = false;
+    this.focused = false;
+    this.lastTyped = 0;
+    this.nameInput.value = '';
+    this.nameInput.disabled = false;
+    this.saveButton.disabled = true;
+    this.saveButton.hidden = false;
+    this.nameMsg.textContent = '';
+    this.viewButton.hidden = true;
+    this.nameBox.hidden = this.entryId === null;
     this.cancelHold();
     this.onDone = onDone;
     this.root.hidden = false;
@@ -67,6 +135,28 @@ export class ResultsScreen {
     this.cancelHold();
     this.onDone = null;
     this.root.hidden = true;
+  }
+
+  /** True while a player is typing a name, so the results screen should not time out under them. */
+  busy(now = Date.now()): boolean {
+    if (!this.entryId || this.saved || this.root.hidden) return false;
+    const active = this.focused || this.nameInput.value.length > 0;
+    return active && now - this.lastTyped < ResultsScreen.TYPING_GRACE_MS;
+  }
+
+  private saveName(): void {
+    if (!this.names || !this.entryId || this.saved) return;
+    const place = this.names.save(this.entryId, this.nameInput.value);
+    if (place === false) {
+      this.nameMsg.textContent = this.i18n.t('results.nameHint');
+      return;
+    }
+    this.saved = true;
+    this.nameInput.disabled = true;
+    this.nameInput.blur();
+    this.saveButton.hidden = true;
+    this.nameMsg.textContent = place === null ? this.i18n.t('results.saved') : this.i18n.t('results.rank', { rank: place });
+    this.viewButton.hidden = false;
   }
 
   private showGift(g: GiftInfo | null): void {
@@ -116,5 +206,9 @@ export class ResultsScreen {
     this.scoreLabel.textContent = this.i18n.t('results.score');
     this.thanks.textContent = this.i18n.t('results.thanks');
     this.holdLabel.textContent = this.i18n.t('results.hold');
+    this.nameHint.textContent = this.i18n.t('results.nameHint');
+    this.nameInput.placeholder = this.i18n.t('results.namePlaceholder');
+    this.saveButton.textContent = this.i18n.t('results.save');
+    this.viewButton.textContent = this.i18n.t('results.viewBoard');
   }
 }

@@ -48,4 +48,76 @@ describe('ResultsScreen', () => {
     expect(s.root.textContent).toContain('Cảm ơn bạn đã chơi!');
     expect(s.root.textContent).toContain('Điểm của bạn');
   });
+  function nameSetup(entryId: string | null = 'r1', saveResult: number | null | false = 3) {
+    const names = { save: vi.fn<(id: string, name: string) => number | null | false>(() => saveResult), open: vi.fn<(id: string) => void>() };
+    const s = new ResultsScreen(document.body, new I18n('en'), 1000, names);
+    s.show({ score: 90, gift: null, entryId }, () => undefined);
+    const input = s.root.querySelector<HTMLInputElement>('.r-name')!;
+    const save = s.root.querySelector<HTMLButtonElement>('.r-save')!;
+    return { s, names, input, save };
+  }
+  const typeInto = (input: HTMLInputElement, text: string) => {
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  it('offers name entry only for a round that can be saved', () => {
+    expect(nameSetup(null).s.root.querySelector<HTMLElement>('.r-namebox')!.hidden).toBe(true);
+    expect(nameSetup('r1').s.root.querySelector<HTMLElement>('.r-namebox')!.hidden).toBe(false);
+  });
+
+  it('keeps only code-name characters as the player types', () => {
+    const { input, save } = nameSetup();
+    expect(save.disabled).toBe(true);
+    typeInto(input, 'Đức Anh!!');
+    expect(input.value).toBe('Duc Anh');
+    expect(save.disabled).toBe(false);
+    expect(input.maxLength).toBe(12);
+    expect(input.placeholder).toBe('Your name');
+  });
+
+  it("saves once, shows today's place, then locks", () => {
+    const { s, names, input, save } = nameSetup();
+    typeInto(input, 'Anna');
+    save.click();
+    expect(names.save).toHaveBeenCalledExactlyOnceWith('r1', 'Anna');
+    expect(s.root.textContent).toContain("You're #3 today!");
+    expect(input.disabled).toBe(true);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    save.click();
+    expect(names.save).toHaveBeenCalledTimes(1);
+    s.root.querySelector<HTMLButtonElement>('.r-view')!.click();
+    expect(names.open).toHaveBeenCalledWith('r1');
+  });
+
+  it('saves with the Enter key, and says "Saved!" outside the top 10', () => {
+    const { s, names, input } = nameSetup('r2', null);
+    typeInto(input, 'Bo');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(names.save).toHaveBeenCalledTimes(1);
+    expect(s.root.querySelector('.r-name-msg')?.textContent).toBe('Saved!');
+  });
+
+  it('keeps the screen open while someone types, and lets go 20 seconds after the last key', () => {
+    const { s, input } = nameSetup();
+    expect(s.busy()).toBe(false);
+    input.dispatchEvent(new FocusEvent('focus'));
+    expect(s.busy()).toBe(true);
+    typeInto(input, 'An');
+    vi.advanceTimersByTime(19_000);
+    expect(s.busy()).toBe(true);
+    vi.advanceTimersByTime(2_000);
+    expect(s.busy()).toBe(false);
+    typeInto(input, 'Ann');
+    expect(s.busy()).toBe(true);
+  });
+
+  it('is not busy once the name is saved, or when name entry is off', () => {
+    const { s, input, save } = nameSetup();
+    input.dispatchEvent(new FocusEvent('focus'));
+    typeInto(input, 'Anna');
+    save.click();
+    expect(s.busy()).toBe(false);
+    expect(nameSetup(null).s.busy()).toBe(false);
+  });
 });
