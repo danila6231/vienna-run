@@ -4,7 +4,7 @@ import { scheduleSlots } from '../../src/core/questions';
 import { createRng } from '../../src/core/rng';
 import { Run } from '../../src/core/run';
 import {
-  applyPreset, buildConfig, defaultSettings, detectPreset, featuresOf, fromShareCode, minRoundSeconds, sanitize, toShareCode, validate,
+  applyPreset, buildConfig, defaultSettings, detectPreset, featuresOf, fromShareCode, minRoundSeconds, sanitize, toShareCode, validate, warnings,
 } from '../../src/core/settings';
 
 describe('defaults', () => {
@@ -97,9 +97,31 @@ describe('share codes', () => {
     const loaded = fromShareCode(code, defaultSettings());
     expect(loaded).toEqual({ ...tuned, preset: 'custom', pin: '2468' });
   });
+  it("never move a device to another device's board", () => {
+    const booth = { ...defaultSettings(), obstacles: 18, leaderboard: { enabled: true, board: 'booth' } };
+    const laptop = { ...defaultSettings(), leaderboard: { enabled: false, board: 'test' } };
+    const loaded = fromShareCode(toShareCode(booth), laptop);
+    expect(loaded?.obstacles).toBe(18);
+    expect(loaded?.leaderboard).toEqual({ enabled: false, board: 'test' });
+    expect(atob(toShareCode(booth).slice(4).replace(/-/g, '+').replace(/_/g, '/'))).not.toContain('leaderboard');
+  });
   it('reject codes that are not ours', () => {
     expect(fromShareCode('hello', defaultSettings())).toBeNull();
     expect(fromShareCode('VR1-!!!', defaultSettings())).toBeNull();
     expect(fromShareCode('VR1-NDI', defaultSettings())).toBeNull();
+  });
+});
+
+describe('warnings', () => {
+  it('say nothing for the presets', () => {
+    for (const p of ['easy', 'normal', 'hard'] as const) expect(warnings(applyPreset(defaultSettings(), p))).toEqual([]);
+  });
+  it('explain when a short, slow round cannot fit the treats', () => {
+    const w = warnings({ ...defaultSettings(), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 });
+    expect(w.join(' ')).toMatch(/about \d+ of 31 treats fit/);
+  });
+  it('explain when too many items are asked for', () => {
+    const w = warnings({ ...defaultSettings(), obstacles: 40, treats: 80 });
+    expect(w.join(' ')).toMatch(/of 80 treats fit/);
   });
 });

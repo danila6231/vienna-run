@@ -1,5 +1,5 @@
 import {
-  applyPreset, defaultSettings, detectPreset, fromShareCode, LIMITS, sanitize, toShareCode, validate, type Settings,
+  applyPreset, defaultSettings, detectPreset, fromShareCode, LIMITS, sanitize, toShareCode, validate, warnings, type Settings,
 } from '../../core/settings';
 import { BAD_TYPES, GOOD_TYPES, isGood } from '../../core/types';
 import { el } from '../dom';
@@ -119,7 +119,7 @@ const pin: Section = {
   render({ draft: d, edit }) {
     const box = el('div');
     box.append(
-      textField('Settings PIN', d.pin, { maxLength: 4, inputMode: 'numeric' }, (v) => edit((x) => { x.pin = v; })),
+      textField('Settings PIN', d.pin, { maxLength: 4, inputMode: 'numeric', secret: true }, (v) => edit((x) => { x.pin = v; })),
       note('4 digits. Write it down: you need it to open this menu. Share codes never include it.'),
     );
     return box;
@@ -163,21 +163,25 @@ const share: Section = {
       ctx.notice('Code loaded. Check the values, then press Save.');
     });
     const box = el('div');
-    box.append(note('Moves these settings (everything except the PIN) to another device.'), row('This device', copy), out, row('Another device', load), input);
+    box.append(note('Moves these settings to another device: everything except the PIN and the leaderboard board, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
     return box;
   },
 };
 
 /** Full-screen staff settings. Edits a copy; Save validates and hands the result back, Cancel throws it away. */
 export class SettingsPanel {
+  /** Left open and untouched this long, the panel closes without saving, so the booth can never stay paused on it. */
+  static readonly IDLE_MS = 180_000;
   readonly root = el('div', 'staff-screen settings');
   private body = el('div', 'st-body');
   private problems = el('ul', 'st-problems');
+  private notes = el('ul', 'st-warnings');
   private message = el('p', 'st-message');
   private saveButton: HTMLButtonElement;
   private draft: Settings = defaultSettings();
   private readonly sections: Section[];
   private readonly ctx: PanelContext;
+  private idleTimer = 0;
 
   constructor(parent: HTMLElement, private readonly o: PanelOptions) {
     this.sections = [difficulty, pointsAndGifts, questions, ...(o.sections ?? []), pin, share];
@@ -209,11 +213,12 @@ export class SettingsPanel {
       this.saveButton,
     );
     const foot = el('footer', 'st-foot');
-    foot.append(this.problems, this.message, actions);
+    foot.append(this.problems, this.notes, this.message, actions);
     this.root.append(head, this.body, foot);
     this.root.dataset.ui = '';
     this.root.hidden = true;
     parent.append(this.root);
+    for (const type of ['pointerdown', 'keydown', 'input', 'wheel']) this.root.addEventListener(type, () => this.armIdle());
   }
 
   get isOpen(): boolean {
@@ -226,12 +231,19 @@ export class SettingsPanel {
     this.render();
     this.root.hidden = false;
     this.body.scrollTop = 0;
+    this.armIdle();
   }
 
   close(): void {
+    window.clearTimeout(this.idleTimer);
     if (this.root.hidden) return;
     this.root.hidden = true;
     this.o.onClose();
+  }
+
+  private armIdle(): void {
+    window.clearTimeout(this.idleTimer);
+    if (!this.root.hidden) this.idleTimer = window.setTimeout(() => this.close(), SettingsPanel.IDLE_MS);
   }
 
   private save(): void {
@@ -255,6 +267,7 @@ export class SettingsPanel {
     for (const b of this.body.querySelectorAll<HTMLElement>('[data-preset]')) b.classList.toggle('on', b.dataset.preset === this.draft.preset);
     const problems = validate(this.draft);
     this.problems.replaceChildren(...problems.map((p) => el('li', '', p)));
+    this.notes.replaceChildren(...warnings(this.draft).map((w) => el('li', '', w)));
     this.saveButton.disabled = problems.length > 0;
   }
 }

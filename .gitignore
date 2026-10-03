@@ -6,3 +6,6 @@ playwright-report/
 vienna-run-offline.zip
 .vercel/
 .DS_Store
+.env
+.env.*
+!.env.example

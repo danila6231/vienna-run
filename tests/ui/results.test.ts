@@ -120,4 +120,12 @@ describe('ResultsScreen', () => {
     expect(s.busy()).toBe(false);
     expect(nameSetup(null).s.busy()).toBe(false);
   });
+
+  it('lets go of the keyboard when the screen closes, so the touch keyboard goes away', () => {
+    const { s, input } = nameSetup();
+    input.focus();
+    expect(document.activeElement).toBe(input);
+    s.hide();
+    expect(document.activeElement).not.toBe(input);
+  });
 });

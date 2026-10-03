@@ -1,7 +1,7 @@
 import type { Tier } from '../config';
 import type { I18n } from '../i18n/i18n';
 import { cleanNameInput, finalName } from '../scores/names';
-import { el } from './dom';
+import { el, releaseFocus } from './dom';
 
 export interface GiftInfo {
   tiers: readonly Tier[];
@@ -134,6 +134,7 @@ export class ResultsScreen {
   hide(): void {
     this.cancelHold();
     this.onDone = null;
+    releaseFocus(this.root);
     this.root.hidden = true;
   }
 

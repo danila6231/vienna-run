@@ -1,4 +1,6 @@
 import { CONFIG, type GameConfig, type Tier } from '../config';
+import { createRng } from './rng';
+import { generateItems } from './spawner';
 import type { ItemType } from './types';
 
 export type Preset = 'easy' | 'normal' | 'hard' | 'custom';
@@ -161,6 +163,30 @@ export function validate(s: Settings): string[] {
   return problems;
 }
 
+const FIT_SEEDS = [1, 2, 3, 4, 5];
+
+/**
+ * Non-blocking notes for the menu: counts this round cannot fit at its length and speeds
+ * (the spawner keeps obstacles readable by leaving treats, then obstacles, out).
+ */
+export function warnings(s: Settings): string[] {
+  const cfg = buildConfig(s);
+  const exact: GameConfig = { ...cfg, spawn: { ...cfg.spawn, mode: 'fixed' } };
+  let bad = 0;
+  let good = 0;
+  for (const seed of FIT_SEEDS) {
+    for (const it of generateItems(createRng(seed), exact)) {
+      if (cfg.items[it.type].good) good++;
+      else bad++;
+    }
+  }
+  const avg = (n: number) => Math.round(n / FIT_SEEDS.length);
+  const notes: string[] = [];
+  if (avg(bad) < s.obstacles * 0.9) notes.push(`Only about ${avg(bad)} of ${s.obstacles} obstacles fit in a round this long at these speeds.`);
+  if (avg(good) < s.treats * 0.9) notes.push(`Only about ${avg(good)} of ${s.treats} treats fit in a round this long at these speeds; the rest are left out.`);
+  return notes;
+}
+
 /** Settings → the config the rules run on. Always returns a playable config, even from unsaved/invalid input. */
 export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig {
   const start = s.startSpeedKmh / 3.6;
@@ -201,21 +227,22 @@ function fromBase64Url(code: string): string {
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 }
 
-/** A copy/paste code with every setting except the PIN. */
+/** A copy/paste code with every setting except the PIN and the leaderboard (each device keeps its own board). */
 export function toShareCode(s: Settings): string {
   const copy: Partial<Settings> = { ...s };
   delete copy.pin;
+  delete copy.leaderboard;
   return SHARE_PREFIX + toBase64Url(JSON.stringify(copy));
 }
 
-/** Settings from a share code (keeping the current PIN), or null if the code is not valid. */
+/** Settings from a share code (keeping this device's PIN and leaderboard), or null if the code is not valid. */
 export function fromShareCode(code: string, current: Settings): Settings | null {
   const c = code.trim();
   if (!c.startsWith(SHARE_PREFIX)) return null;
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(c.slice(SHARE_PREFIX.length)));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    return sanitize({ ...(parsed as object), pin: current.pin });
+    return sanitize({ ...(parsed as object), pin: current.pin, leaderboard: { ...current.leaderboard } });
   } catch {
     return null;
   }

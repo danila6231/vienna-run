@@ -40,7 +40,8 @@
 .st-tier { display: flex; gap: 1cqmin; align-items: center; }
 .st-foot { padding: 1.4cqmin 4cqmin 2cqmin; border-top: 0.2cqmin solid var(--paper-2); display: grid; gap: 0.8cqmin; }
 .st-problems { margin: 0; padding-left: 3cqmin; color: #b3262d; font-weight: 600; font-size: 2.2cqmin; }
-.st-problems:empty, .st-message:empty { display: none; }
+.st-warnings { margin: 0; padding-left: 3cqmin; color: #8a5a00; font-weight: 600; font-size: 2.2cqmin; }
+.st-problems:empty, .st-warnings:empty, .st-message:empty { display: none; }
 .st-message { margin: 0; color: var(--green); font-weight: 600; font-size: 2.2cqmin; }
 .st-actions { display: flex; gap: 1.4cqmin; justify-content: flex-end; }
 .st-subhead { margin: 2cqmin 0 0.4cqmin; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 2.8cqmin; }

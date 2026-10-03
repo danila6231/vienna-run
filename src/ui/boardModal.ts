@@ -1,7 +1,7 @@
 import type { I18n } from '../i18n/i18n';
 import type { BoardRow, Range, SyncStatus } from '../scores/types';
 import { boardList } from './board';
-import { el } from './dom';
+import { el, releaseFocus } from './dom';
 
 export interface BoardSource {
   readonly available: boolean;
@@ -65,6 +65,7 @@ export class BoardModal {
 
   hide(): void {
     window.clearTimeout(this.timer);
+    releaseFocus(this.root);
     this.root.hidden = true;
   }
 

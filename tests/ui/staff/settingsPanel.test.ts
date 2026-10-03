@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { applyPreset, defaultSettings, toShareCode, type Settings } from '../../../src/core/settings';
 import { el } from '../../../src/ui/dom';
 import { SettingsPanel, type Section } from '../../../src/ui/staff/settingsPanel';
@@ -68,6 +68,16 @@ describe('SettingsPanel', () => {
     buttonNamed(root, 'Save').click();
     expect(onSave).not.toHaveBeenCalled();
   });
+  it('warns, without blocking Save, when the counts cannot fit the round', () => {
+    const { root } = setup();
+    type(field(root, 'Treats per round'), '80');
+    type(field(root, 'Obstacles per round'), '40');
+    expect(root.querySelector('.st-warnings')?.textContent).toMatch(/treats fit/);
+    expect(buttonNamed(root, 'Save').disabled).toBe(false);
+    type(field(root, 'Treats per round'), '31');
+    type(field(root, 'Obstacles per round'), '11');
+    expect(root.querySelector('.st-warnings')?.textContent).toBe('');
+  });
   it('switches bonus questions off', () => {
     const { root, onSave } = setup();
     click(root, 'Bonus questions');
@@ -117,5 +127,27 @@ describe('SettingsPanel', () => {
     const extra: Section = { title: 'Leaderboard', render: () => el('p', '', 'board controls') };
     const { root } = setup(defaultSettings(), [extra]);
     expect(root.textContent).toContain('board controls');
+  });
+  describe('left open by mistake', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('closes by itself after a few idle minutes, without saving', () => {
+      vi.useFakeTimers();
+      const { root, onSave, onClose } = setup();
+      click(root, 'Hard');
+      vi.advanceTimersByTime(SettingsPanel.IDLE_MS - 1_000);
+      expect(root.hidden).toBe(false);
+      root.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      vi.advanceTimersByTime(SettingsPanel.IDLE_MS - 1_000);
+      expect(root.hidden).toBe(false);
+      vi.advanceTimersByTime(2_000);
+      expect(root.hidden).toBe(true);
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onSave).not.toHaveBeenCalled();
+    });
+    it('does not show the PIN in plain text', () => {
+      const { root } = setup();
+      expect(field(root, 'Settings PIN').type).toBe('password');
+    });
   });
 });

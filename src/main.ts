@@ -194,7 +194,8 @@ async function boot(): Promise<void> {
       if (!staffOpen) game.lane(d);
     },
     onPress: () => {
-      if (!staffOpen) game.press();
+      // Nothing starts a round hidden under the staff screens or the open leaderboard.
+      if (!staffOpen && !boardModal.isOpen) game.press();
     },
   });
   const monitor = params.quality ? null : new QualityMonitor('high');

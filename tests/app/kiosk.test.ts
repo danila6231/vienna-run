@@ -24,18 +24,24 @@ describe('installKiosk', () => {
   it('hides the cursor', () => {
     expect(document.body.classList.contains('hide-cursor')).toBe(true);
   });
-  it('lets people select and paste inside text fields only', () => {
-    const field = document.createElement('input');
-    document.body.append(field);
-    const inField = new Event('selectstart', { bubbles: true, cancelable: true });
-    field.dispatchEvent(inField);
-    expect(inField.defaultPrevented).toBe(false);
-    const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-    field.dispatchEvent(menu);
-    expect(menu.defaultPrevented).toBe(false);
-    const outside = new Event('selectstart', { bubbles: true, cancelable: true });
-    document.body.dispatchEvent(outside);
-    expect(outside.defaultPrevented).toBe(true);
-    field.remove();
+  it('lets people select inside text fields, but keeps the browser menu to staff fields', () => {
+    const visitor = document.createElement('input');
+    const staff = document.createElement('div');
+    staff.className = 'staff-screen';
+    const staffField = document.createElement('textarea');
+    staff.append(staffField);
+    document.body.append(visitor, staff);
+    const fire = (target: Element, type: string) => {
+      const e = new MouseEvent(type, { bubbles: true, cancelable: true });
+      target.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    expect(fire(visitor, 'selectstart')).toBe(false);
+    expect(fire(staffField, 'selectstart')).toBe(false);
+    expect(fire(document.body, 'selectstart')).toBe(true);
+    expect(fire(visitor, 'contextmenu')).toBe(true);
+    expect(fire(staffField, 'contextmenu')).toBe(false);
+    visitor.remove();
+    staff.remove();
   });
 });

@@ -27,6 +27,11 @@ test('a player saves a code name and sees it on the start screen', async ({ page
   await expect(page.locator('.board-panel')).toContainText('Anna');
   await page.locator('.board-open').click();
   await expect(page.locator('.board-modal')).toBeVisible();
+  // A key press (physical keyboard at the booth) must not start a round hidden under the open leaderboard.
+  await page.locator('.board-close').focus();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as any).__vr.screen)).toBe('attract');
 });
 

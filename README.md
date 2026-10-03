@@ -30,7 +30,7 @@ change it in the menu). The menu sets:
   per round; "Random each round" or "Same for everyone".
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Bonus questions:** on/off, how many per round, seconds to answer.
-- **Share code:** copy every setting except the PIN to another device.
+- **Share code:** copy every setting except the PIN and the leaderboard board to another device.
 
 Settings are saved on each device and apply from the next round.
 

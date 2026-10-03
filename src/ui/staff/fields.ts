@@ -81,9 +81,9 @@ export function choice<T extends string>(label: string, options: ReadonlyArray<{
   return row(label, box);
 }
 
-export function textField(label: string, value: string, opts: { maxLength: number; inputMode?: string }, onChange: (v: string) => void): HTMLElement {
+export function textField(label: string, value: string, opts: { maxLength: number; inputMode?: string; secret?: boolean }, onChange: (v: string) => void): HTMLElement {
   const input = el('input', 'st-text');
-  input.type = 'text';
+  input.type = opts.secret ? 'password' : 'text';
   input.value = value;
   input.maxLength = opts.maxLength;
   input.autocomplete = 'off';

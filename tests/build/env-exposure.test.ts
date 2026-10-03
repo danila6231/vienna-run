@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import config from '../../vite.config';
 
@@ -13,6 +14,11 @@ describe('environment exposure', () => {
   it('never exposes server-only secrets to the browser', () => {
     for (const mode of ['production', 'offline']) {
       for (const prefix of [resolve(mode).envPrefix ?? []].flat()) expect(['', 'SUPABASE_', 'POSTGRES_']).not.toContain(prefix);
+    }
+  });
+  it('keeps pulled environment files (which hold the service-role key) out of git', () => {
+    for (const file of ['.env', '.env.local', '.env.production.local']) {
+      expect(() => execFileSync('git', ['check-ignore', '-q', file]), file).not.toThrow();
     }
   });
 });
