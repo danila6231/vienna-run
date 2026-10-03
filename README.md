@@ -34,6 +34,12 @@ change it in the menu). The menu sets:
 
 Settings are saved on each device and apply from the next round.
 
+## Languages
+The game starts in **Vietnamese**. The **VI | EN** pill on the start screen switches to English for one
+player; the game returns to Vietnamese after every round. Texts live in `src/i18n/strings.ts`, and
+questions (both languages) in `src/data/questions.json`. The Vietnamese texts were machine-written:
+**have a native speaker review them before the event.**
+
 ## Changing things
 - **Points, difficulty, gift tiers:** use the staff settings menu. `src/config.ts` holds the defaults; `npm run simulate` shows the score spread for each preset.
 - **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.

@@ -41,6 +41,11 @@ const isRecent = (v: unknown): v is string[][] => Array.isArray(v) && v.every((r
 
 async function boot(): Promise<void> {
   const i18n = new I18n('vi');
+  const syncLang = () => {
+    document.documentElement.lang = i18n.lang;
+  };
+  syncLang();
+  i18n.onChange(syncLang);
   const params = parseParams(location.search);
   installKiosk(document, { hideCursor: params.hideCursor && !params.check });
 
@@ -60,7 +65,12 @@ async function boot(): Promise<void> {
   document.body.append(stage);
 
   let loop: Loop | null = null;
-  installWatchdog({ cfg: CONFIG.watchdog, canvas, lastFrameAt: () => loop?.lastFrameAt() ?? performance.now() });
+  installWatchdog({
+    cfg: CONFIG.watchdog,
+    canvas,
+    lastFrameAt: () => loop?.lastFrameAt() ?? performance.now(),
+    text: (k) => i18n.t(k === 'restart' ? 'watchdog.restart' : 'watchdog.staff'),
+  });
   setupUpdates();
 
   const art = await loadArt();
@@ -98,6 +108,7 @@ async function boot(): Promise<void> {
     bank: validateBank(bankJson),
     world,
     ui,
+    i18n,
     seed: params.seed,
     autoplay: params.autoplay,
     recent: { read: () => readJson(RECENT_KEY, [], isRecent), write: (h) => writeJson(RECENT_KEY, h) },
