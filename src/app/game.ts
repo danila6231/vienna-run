@@ -3,8 +3,11 @@ import { Bot, BOT_SKILLS } from '../core/bot';
 import { pickQuestions, updateRecent } from '../core/questions';
 import { createRng, randomSeed } from '../core/rng';
 import { Run } from '../core/run';
+import { tierIndex } from '../core/scoring';
+import type { Features } from '../core/settings';
 import type { Question, RunEvent } from '../core/types';
 import { formatPoints } from '../ui/labels';
+import type { GiftInfo, ResultsInfo } from '../ui/results';
 import { audio } from './audio';
 import { Flow, type Screen } from './flow';
 
@@ -26,15 +29,15 @@ export interface GameUi {
     confetti(): void;
     clear(): void;
   };
-  attract: { show(): void; hide(): void };
-  howto: { showHowto(): void; showCount(n: number): void; hide(): void };
+  attract: { show(): void; hide(): void; configure(cfg: GameConfig, features: Features): void };
+  howto: { showHowto(questionsOn: boolean): void; showCount(n: number): void; hide(): void };
   question: {
     show(q: Question, basePoints: number, onPick: (index: number) => void): void;
     tick(fraction: number, secondsLeft: number): void;
     reveal(correct: number, picked: number | null): void;
     hide(): void;
   };
-  results: { show(score: number, onDone: () => void): void; hide(): void };
+  results: { show(info: ResultsInfo, onDone: () => void): void; hide(): void };
 }
 
 export interface RecentStore {
@@ -47,6 +50,10 @@ export interface GameOptions {
   bank: readonly Question[];
   world: GameWorld;
   ui: GameUi;
+  /** What the screens show (gift ladder, leaderboard); both off unless given. */
+  features?: Features;
+  /** Designer gift card image for a tier, if there is one. */
+  giftUrl?: (tier: number) => string | null;
   seed?: number;
   /** The bot plays whole rounds: presses start, answers, and dismisses results by itself. */
   autoplay?: boolean;
@@ -60,6 +67,10 @@ export class Game {
   readonly flow: Flow;
   run: Run;
   cycles = 0;
+  private cfg: GameConfig;
+  private features: Features;
+  /** Settings saved while a round was running; applied when the booth is back on the start screen. */
+  private next: { cfg: GameConfig; features: Features } | null = null;
   private seed: number;
   private demoBot: Bot | null = null;
   private playerBot: Bot | null = null;
@@ -71,15 +82,36 @@ export class Game {
   private autoTimer = 0;
 
   constructor(private readonly o: GameOptions) {
+    this.cfg = o.cfg;
+    this.features = o.features ?? { showGifts: false, leaderboard: false };
     this.seed = o.seed ?? randomSeed();
+    o.ui.attract.configure(this.cfg, this.features);
     this.run = this.newRun();
-    this.flow = new Flow(o.cfg, { enter: (s, prev) => this.enter(s, prev), answered: (c) => this.answered(c) });
+    this.flow = new Flow(this.cfg, { enter: (s, prev) => this.enter(s, prev), answered: (c) => this.answered(c) });
     this.flow.start();
+  }
+
+  /** The rules in use right now. */
+  get config(): GameConfig {
+    return this.cfg;
+  }
+
+  /**
+   * New settings from the staff menu. On the start screen they apply at once (the demo restarts with them);
+   * otherwise when the booth next reaches the start screen. A round in progress never changes.
+   */
+  configure(cfg: GameConfig, features: Features): void {
+    this.next = { cfg, features };
+    if (this.flow.screen === 'attract') {
+      this.applyNext();
+      this.startDemo();
+    }
   }
 
   /** One fixed simulation step. */
   update(dt: number): void {
-    const { ui, cfg } = this.o;
+    const { ui } = this.o;
+    const cfg = this.cfg;
     this.flow.update(dt);
     switch (this.flow.screen) {
       case 'attract':
@@ -133,8 +165,17 @@ export class Game {
     if (!this.o.autoplay) this.flow.press();
   }
 
+  private applyNext(): void {
+    if (!this.next) return;
+    this.cfg = this.next.cfg;
+    this.features = this.next.features;
+    this.next = null;
+    this.flow.setConfig(this.cfg);
+    this.o.ui.attract.configure(this.cfg, this.features);
+  }
+
   private newRun(): Run {
-    const run = new Run({ seed: this.seed++, config: this.o.cfg });
+    const run = new Run({ seed: this.seed++, config: this.cfg });
     this.o.world.reset();
     return run;
   }
@@ -159,7 +200,8 @@ export class Game {
   }
 
   private enter(s: Screen, prev: Screen): void {
-    const { ui, cfg } = this.o;
+    const { ui } = this.o;
+    const cfg = this.cfg;
     switch (s) {
       case 'attract':
         ui.results.hide();
@@ -167,6 +209,7 @@ export class Game {
         ui.howto.hide();
         ui.hud.show(false);
         ui.fx.clear();
+        this.applyNext();
         this.autoTimer = 0;
         this.startDemo();
         ui.attract.show();
@@ -181,7 +224,7 @@ export class Game {
         this.playerBot = this.o.autoplay ? new Bot(createRng(this.seed * 7 + 1), BOT_SKILLS.average) : null;
         this.questions = pickQuestions(createRng(this.seed * 13 + 5), this.o.bank, cfg.questions.perRun, (this.o.recent?.read() ?? []).flat());
         this.asked = 0;
-        ui.howto.showHowto();
+        ui.howto.showHowto(cfg.questions.perRun > 0);
         ui.hud.update(0, 0);
         ui.hud.show(true);
         break;
@@ -228,7 +271,13 @@ export class Game {
         break;
       case 'results': {
         ui.hud.show(false);
-        ui.results.show(this.run.score, () => this.flow.nextPlayer());
+        const score = this.run.score;
+        let gift: GiftInfo | null = null;
+        if (this.features.showGifts) {
+          const index = tierIndex(score, cfg.tiers);
+          gift = { tiers: cfg.tiers, index, url: this.o.giftUrl?.(index) ?? null };
+        }
+        ui.results.show({ score, gift }, () => this.flow.nextPlayer());
         break;
       }
     }

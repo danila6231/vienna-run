@@ -1,9 +1,26 @@
+import type { Tier } from '../config';
 import { el } from './dom';
 
-/** End of a round: the score, and a hold-to-reset button for staff. */
+export interface GiftInfo {
+  tiers: readonly Tier[];
+  /** The tier this score reached. */
+  index: number;
+  /** Designer gift card image, or null. */
+  url: string | null;
+}
+
+export interface ResultsInfo {
+  score: number;
+  /** Null while gifts are switched off. */
+  gift: GiftInfo | null;
+}
+
+/** End of a round: the score, the prize when gifts are on, and a hold-to-reset button for staff. */
 export class ResultsScreen {
   readonly root = el('div', 'screen results');
   private score = el('b', 'r-score');
+  private thanks = el('p', 'r-thanks', 'Thanks for playing!');
+  private giftBox = el('div', 'r-giftbox');
   private hold = el('button', 'r-hold');
   private holdFill = el('i');
   private holdTimer = 0;
@@ -13,7 +30,7 @@ export class ResultsScreen {
     const card = el('div', 'paper-card results-card');
     const scoreBox = el('div', 'r-scorebox');
     scoreBox.append(el('span', 'lbl', 'Your score'), this.score);
-    card.append(scoreBox, el('p', 'r-thanks', 'Thanks for playing!'));
+    card.append(scoreBox, this.thanks, this.giftBox);
     this.hold.type = 'button';
     this.hold.append(this.holdFill, el('span', '', 'Hold for next player'));
     const start = (e: Event) => {
@@ -33,8 +50,9 @@ export class ResultsScreen {
     parent.append(this.root);
   }
 
-  show(score: number, onDone: () => void): void {
-    this.score.textContent = String(score);
+  show(info: ResultsInfo, onDone: () => void): void {
+    this.score.textContent = String(info.score);
+    this.showGift(info.gift);
     this.cancelHold();
     this.onDone = onDone;
     this.root.hidden = false;
@@ -44,6 +62,30 @@ export class ResultsScreen {
     this.cancelHold();
     this.onDone = null;
     this.root.hidden = true;
+  }
+
+  private showGift(g: GiftInfo | null): void {
+    this.thanks.hidden = g !== null;
+    this.giftBox.hidden = g === null;
+    if (!g) {
+      this.giftBox.replaceChildren();
+      return;
+    }
+    const parts: HTMLElement[] = [el('p', 'lbl', 'Your prize'), el('h2', 'r-tier', g.tiers[g.index].name)];
+    if (g.url) {
+      const img = el('img', 'r-gift');
+      img.src = g.url;
+      img.alt = '';
+      parts.push(img);
+    }
+    const ladder = el('ol', 'ladder r-ladder');
+    g.tiers.forEach((t, i) => {
+      const li = el('li', i === g.index ? 'on' : i < g.index ? 'passed' : '');
+      li.append(el('b', '', `${t.min}+`), el('span', '', t.name));
+      ladder.append(li);
+    });
+    parts.push(ladder);
+    this.giftBox.replaceChildren(...parts);
   }
 
   private startHold(): void {

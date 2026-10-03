@@ -4,10 +4,12 @@ import { CONFIG } from '../../src/config';
 import { AttractScreen } from '../../src/ui/attract';
 
 const icons = { sacher: 'a.png', kipferl: 'b.png', melange: 'c.png', mozart: 'd.png', krampus: 'e.png', bomb: 'f.png' };
+const noGifts = { showGifts: false, leaderboard: false };
 
 describe('AttractScreen', () => {
   it('lists every item with its points', () => {
-    const s = new AttractScreen(document.body, CONFIG, icons, null);
+    const s = new AttractScreen(document.body, icons, null);
+    s.configure(CONFIG, noGifts);
     const text = s.root.textContent ?? '';
     expect(text).toContain('Tap anywhere to play');
     expect(text).toContain('Sachertorte');
@@ -15,15 +17,30 @@ describe('AttractScreen', () => {
     expect(text).toContain('−10');
     expect(s.root.querySelectorAll('.legend img')).toHaveLength(6);
   });
-  it('does not mention gifts or prizes', () => {
-    const s = new AttractScreen(document.body, CONFIG, icons, null);
+  it('shows the points from the current settings', () => {
+    const s = new AttractScreen(document.body, icons, null);
+    s.configure(CONFIG, noGifts);
+    s.configure({ ...CONFIG, items: { ...CONFIG.items, sacher: { points: 25, good: true } } }, noGifts);
+    expect(s.root.textContent).toContain('+25');
+    expect(s.root.querySelectorAll('.legend li')).toHaveLength(6);
+  });
+  it('does not mention gifts while they are switched off', () => {
+    const s = new AttractScreen(document.body, icons, null);
+    s.configure(CONFIG, noGifts);
     const text = (s.root.textContent ?? '').toLowerCase();
     for (const t of CONFIG.tiers) expect(text).not.toContain(t.name.toLowerCase());
     expect(text).not.toMatch(/prize|gift/);
-    expect(s.root.querySelector('.ladder')).toBeNull();
+  });
+  it('shows the gift ladder when gifts are switched on', () => {
+    const s = new AttractScreen(document.body, icons, null);
+    s.configure(CONFIG, { showGifts: true, leaderboard: false });
+    const ladder = s.root.querySelector('.ladder');
+    expect(ladder?.hasAttribute('hidden')).toBe(false);
+    expect(ladder?.textContent).toContain('80+');
+    expect(ladder?.textContent).toContain(CONFIG.tiers[1].name);
   });
   it('uses the logo image when one is provided', () => {
-    const s = new AttractScreen(document.body, CONFIG, icons, 'logo.svg');
+    const s = new AttractScreen(document.body, icons, 'logo.svg');
     expect(s.root.querySelector('img.logo')?.getAttribute('src')).toBe('logo.svg');
   });
 });

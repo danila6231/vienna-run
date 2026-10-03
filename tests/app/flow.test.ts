@@ -86,4 +86,13 @@ describe('Flow', () => {
     expect(flow.questionRemaining).toBeGreaterThan(5.5);
     expect(flow.questionRemaining).toBeLessThan(6.1);
   });
+  it('uses new timings after setConfig', () => {
+    const { flow, answered, tick } = setup();
+    flow.setConfig({ ...CONFIG, questions: { ...CONFIG.questions, timeLimit: 5 } });
+    flow.press();
+    tick(6.1);
+    flow.questionAsked();
+    tick(5);
+    expect(answered).toHaveBeenCalledExactlyOnceWith(false);
+  });
 });

@@ -72,7 +72,7 @@ async function boot(): Promise<void> {
   const ui = {
     hud: new Hud(stage, 'Stephansplatz → Riesenrad'),
     fx: new Fx(stage),
-    attract: new AttractScreen(stage, CONFIG, icons, art.url('logo')),
+    attract: new AttractScreen(stage, icons, art.url('logo')),
     howto: new HowtoScreen(stage),
     question: new QuestionScreen(stage),
     results: new ResultsScreen(stage, CONFIG.flow.holdSeconds * 1000),

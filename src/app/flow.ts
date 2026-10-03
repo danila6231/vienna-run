@@ -15,7 +15,12 @@ export class Flow {
   screen: Screen = 'attract';
   elapsed = 0;
 
-  constructor(private readonly cfg: GameConfig, private readonly hooks: FlowHooks) {}
+  constructor(private cfg: GameConfig, private readonly hooks: FlowHooks) {}
+
+  /** New timings from the settings menu (the game only calls this on the start screen). */
+  setConfig(cfg: GameConfig): void {
+    this.cfg = cfg;
+  }
 
   start(): void {
     this.elapsed = 0;
