@@ -12,11 +12,17 @@ export interface Street {
   setDetail(high: boolean): void;
 }
 
-/** One look a pooled card can take: its own geometry (sized by its image shape), material and height. */
-interface Variant {
-  geo: THREE.PlaneGeometry;
+/** One look a pooled row slot can take: its own geometry, material and height (the mesh stands at h/2). */
+export interface Variant {
+  geo: THREE.BufferGeometry;
   mat: THREE.Material;
   h: number;
+}
+
+/** 3D houses for the facade rows instead of the paper cards: front at local z = 0 facing +z, base at y = 0 (h = 0). */
+export interface HouseRows {
+  front: Variant[];
+  back: Variant[];
 }
 
 interface Row extends RowSpec {
@@ -31,7 +37,7 @@ const LEN = 320; // length of the road strip, metres
 const MID = -140; // its centre: from 20 m behind the runner to 300 m ahead
 const DASHES = 40; // lane dashes per line, one every 8 m
 
-export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
+export function createStreet(scene: THREE.Scene, art: ArtSet, houses?: HouseRows): Street {
   const basic = (o: THREE.MeshBasicMaterialParameters) => new THREE.MeshBasicMaterial(o);
   const flat = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
     const m = new THREE.Mesh(geo, mat);
@@ -100,11 +106,11 @@ export function createStreet(scene: THREE.Scene, art: ArtSet): Street {
       return { geo: new THREE.PlaneGeometry(width, h), mat: basic({ map: toTexture(c), alphaTest: 0.5, ...(tint ? { color: tint } : {}) }), h };
     });
 
-  const facades = art.group('facade-');
-  // The left side faces away from the light, so it is tinted a little darker.
-  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, cards(facades, 8, 0xe7dfd4), -7.9, Math.PI / 2);
-  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, cards(facades, 8), 7.9, -Math.PI / 2);
-  const backs = cards(art.group('back-'), 10);
+  const front = (tint?: number) => houses?.front ?? cards(art.group('facade-'), 8, tint);
+  // The left side faces away from the light, so its paper cards are tinted a little darker (3D houses are lit).
+  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, front(0xe7dfd4), -7.9, Math.PI / 2);
+  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, front(), 7.9, -Math.PI / 2);
+  const backs = houses?.back ?? cards(art.group('back-'), 10);
   addRow('back', -1, { count: 24, spacing: 10, offset: 3 }, backs, -13.5, Math.PI / 2);
   addRow('back', 1, { count: 24, spacing: 10, offset: 8 }, backs, 13.5, -Math.PI / 2);
   const lampArt = art.get('prop-lamp');

@@ -386,7 +386,7 @@ function grainDataUrl() {
 }
 
 export {
-  TAU, hash, cnv, mixHex, EMOJI_FONT, silhouette, paperEdge, emojiCanvas,
+  TAU, hash, cnv, mixHex, EMOJI_FONT, silhouette, paperEdge, emojiCanvas, FACADE_PAL, SIGNS,
   paintWaiterA, paintFacadeA, paintBackA, paintStephansdomA, paintKarlskircheA, paintHofburgA,
   paintWheelA, paintWheelSupportA, paintCabinA, paintTramA, paintLampA, paintBannerA, paintCheckerA,
   paintCloudA, paintSkylineA, paintRoadA, paintWalkA, blobCanvas, shadowStrip, grainDataUrl,

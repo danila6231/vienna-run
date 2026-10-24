@@ -1,0 +1,38 @@
+{
+  "machine": "Apple M5",
+  "date": "2026-10-24",
+  "rows": [
+    {
+      "look": "paper",
+      "label": "Paper (today)",
+      "calls": 144,
+      "triangles": 466,
+      "fps": 60.16269912654602,
+      "fpsSlow": 60.12304250558837
+    },
+    {
+      "look": "stylized",
+      "label": "Stylized 3D",
+      "calls": 143,
+      "triangles": 166899,
+      "fps": 60.029516174063424,
+      "fpsSlow": 60.09663378988588
+    },
+    {
+      "look": "lowpoly",
+      "label": "Low-poly",
+      "calls": 143,
+      "triangles": 44285,
+      "fps": 60.16630686815607,
+      "fpsSlow": 60.11823919469745
+    },
+    {
+      "look": "realistic",
+      "label": "Closer to realistic",
+      "calls": 201,
+      "triangles": 375944,
+      "fps": 60.00199342170836,
+      "fpsSlow": 60.10743455078954
+    }
+  ]
+}

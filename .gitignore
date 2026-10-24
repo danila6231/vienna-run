@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-offline/
+dist-demo/
 test-results/
 playwright-report/
 vienna-run-offline.zip
