@@ -38,12 +38,15 @@ import { ResultsScreen } from './ui/results';
 import { runSelfCheck } from './ui/selfcheck';
 import { attachCornerHold } from './ui/staff/cornerHold';
 import { downloadText } from './ui/staff/download';
+import { button } from './ui/staff/fields';
 import { leaderboardSection } from './ui/staff/leaderboardSection';
 import { PinPad } from './ui/staff/pinPad';
 import { SettingsPanel } from './ui/staff/settingsPanel';
 
 const RECENT_KEY = 'vienna-run:recent-questions';
 const CORNER_HOLD_MS = 3000;
+/** For now: a visible Settings button on the start screen, no PIN. Set to false for the hidden corner hold and PIN. */
+const QUICK_SETTINGS = true;
 const isRecent = (v: unknown): v is string[][] => Array.isArray(v) && v.every((r) => Array.isArray(r) && r.every((x) => typeof x === 'string'));
 
 async function boot(): Promise<void> {
@@ -156,7 +159,8 @@ async function boot(): Promise<void> {
     },
   });
 
-  // Staff settings: hold the top-left corner of the start screen, then the PIN. The game pauses meanwhile.
+  // Staff settings: the top-left Settings button (QUICK_SETTINGS), or a hold on the top-left corner then the PIN.
+  // The game pauses meanwhile.
   let staffOpen = false;
   const pinPad = new PinPad(stage);
   const panel = new SettingsPanel(stage, {
@@ -172,9 +176,13 @@ async function boot(): Promise<void> {
       staffOpen = false;
     },
   });
-  attachCornerHold(ui.attract.root, CORNER_HOLD_MS, () => {
+  const openSettings = () => {
     if (staffOpen || game.flow.screen !== 'attract') return;
     staffOpen = true;
+    if (QUICK_SETTINGS) {
+      panel.open(settings);
+      return;
+    }
     pinPad.open({
       check: (pin) => pin === settings.pin,
       onSuccess: () => panel.open(settings),
@@ -182,7 +190,9 @@ async function boot(): Promise<void> {
         staffOpen = false;
       },
     });
-  });
+  };
+  if (QUICK_SETTINGS) ui.attract.root.append(button('⚙ Settings', openSettings, 'staff-open'));
+  else attachCornerHold(ui.attract.root, CORNER_HOLD_MS, openSettings);
 
   // Other devices' scores appear while the start screen waits for the next player.
   window.setInterval(() => {

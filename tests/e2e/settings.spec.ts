@@ -1,20 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('staff open settings with a corner hold and the PIN, pick Hard, and the next round runs faster', async ({ page }) => {
+test('staff open settings with the Settings button, pick Hard, and the next round runs faster', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/?seed=4');
   await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
   const vp = page.viewportSize()!;
 
-  // A short press in the corner does nothing; a 3-second hold opens the PIN pad.
-  await page.mouse.move(vp.width * 0.04, vp.height * 0.05);
-  await page.mouse.down();
-  await page.waitForTimeout(3300);
-  await page.mouse.up();
-  await expect(page.locator('.pin-pad')).toBeVisible();
-  for (const d of '2468') await page.locator('.pin-key', { hasText: new RegExp(`^${d}$`) }).click();
+  // QUICK_SETTINGS: the top-left button opens settings straight away, without starting a round.
+  await page.locator('.staff-open').click();
   await expect(page.locator('.settings')).toBeVisible();
+  expect(await page.evaluate(() => (window as any).__vr.screen)).toBe('attract');
 
   await page.locator('.settings button', { hasText: /^Hard$/ }).click();
   await page.locator('.settings button', { hasText: /^Save$/ }).click();
