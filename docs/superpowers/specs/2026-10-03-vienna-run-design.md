@@ -88,10 +88,11 @@ placeholder painters and camera rig get ported into the real project.
 - **Camera:** a Three.js perspective camera (FOV 50) behind and above the runner, following the
   lane softly. Fog for depth; a painted sky gradient.
 - **Street:** the cobblestone road and sidewalks are tiling textures that scroll.
-- **Facade cards:** pooled planes facing the road (8 m × 12 m), recycled behind the camera,
-  plus a hazier back row (10 m × 16 m).
-- **Landmarks:** cards angled toward the road in plaza gaps. The Riesenrad is three parts: a
-  rotating wheel, cabins that stay upright, and a static support.
+- **Houses (changed 2026-10-24):** 3D row houses built in code (`src/render/buildings/`), pooled
+  and recycled behind the camera (8 m wide), plus a hazier back row (10 m wide). One merged mesh
+  and one shared lit material per building, so the draw count matches the old facade cards.
+- **Landmarks (changed 2026-10-24):** 3D models angled toward the road in plaza gaps. The
+  Riesenrad is three parts: a rotating wheel, cabins that stay upright, and a static support.
 - **Items and runner:** billboards (sprites) with blob shadows.
 - **Cutouts:** use alpha cutoff (`alphaTest` 0.5), not soft blending, so there are no sorting
   artifacts.
@@ -100,8 +101,9 @@ placeholder painters and camera rig get ported into the real project.
 - **Overlays:** paper grain and a warm vignette, as CSS on top of the canvas.
 
 ## Art & asset requirements
-**Everything is a flat 2D image. No 3D models.** The 3D effect, perspective, motion, Riesenrad
-rotation, bobbing and shadows come from code. `docs/ASSET_SPEC.md` is the designer-facing
+**Every art file is a flat 2D image.** Since 2026-10-24 the houses and landmarks are 3D models
+built in code instead of images (the paper facades read too obviously as paper). Perspective,
+motion, Riesenrad rotation, bobbing and shadows come from code. `docs/ASSET_SPEC.md` is the designer-facing
 version of this section (written in M1 so the designer can start early).
 
 **Technical rules for every image:**

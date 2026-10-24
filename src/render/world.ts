@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
 import type { Run } from '../core/run';
+import { createBuildingSet } from './buildings';
 import { createItems } from './items';
 import { pixelRatioFor } from './quality';
 import { createLandmarks } from './landmarks';
@@ -26,8 +27,10 @@ export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: n
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.5, 600);
   const sky = createSky(scene, art);
-  const street = createStreet(scene, art);
-  const landmarks = createLandmarks(scene, art);
+  const buildings = createBuildingSet();
+  buildings.light(scene);
+  const street = createStreet(scene, art, buildings.houses);
+  const landmarks = createLandmarks(scene, art, buildings.landmarks);
   const items = createItems(scene, art, laneWidth);
   const runner = createRunner(scene, art, items, laneWidth);
   const v = new THREE.Vector3();

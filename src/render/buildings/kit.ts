@@ -1,14 +1,7 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Geometry helpers for the 3D buildings. Nothing here touches the DOM, so the builders run in unit tests.
-
-export type BuildingStyle = 'stylized' | 'lowpoly' | 'realistic';
-export const BUILDING_STYLES: readonly BuildingStyle[] = ['stylized', 'lowpoly', 'realistic'];
-
-/** How much geometry a style spends: 0 keeps the massing only, 1 adds frames and mouldings, 2 the small details. */
-export type Detail = 0 | 1 | 2;
-export const DETAIL: Record<BuildingStyle, Detail> = { lowpoly: 0, stylized: 1, realistic: 2 };
 
 /** A rectangle of the shared texture atlas, in UV units (v up). */
 export interface UvRect {
@@ -62,9 +55,23 @@ export class Parts {
   private readonly euler = new THREE.Euler();
   private readonly pos = new THREE.Vector3();
   private readonly scl = new THREE.Vector3();
+  private outer: THREE.Matrix4 | null = null;
 
   get size(): number {
     return this.geos.length;
+  }
+
+  /** Runs `draw` with every part it adds moved to `at` and turned by `rotY`: for repeating a group, e.g. a window. */
+  transformed(at: Vec3, rotY: number, draw: () => void): this {
+    const prev = this.outer;
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(...at), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotY), new THREE.Vector3(1, 1, 1));
+    this.outer = prev ? prev.clone().multiply(m) : m;
+    try {
+      draw();
+    } finally {
+      this.outer = prev;
+    }
+    return this;
   }
 
   add(geo: THREE.BufferGeometry, color: THREE.ColorRepresentation, o: PartOptions = {}): this {
@@ -77,6 +84,7 @@ export class Parts {
       this.quat.setFromEuler(this.euler.set(...(o.rot ?? [0, 0, 0]))),
       this.scl.set(...(o.scale ?? [1, 1, 1])),
     );
+    if (this.outer) this.matrix.premultiply(this.outer);
     g.applyMatrix4(this.matrix);
     const n = g.attributes.position.count;
     this.color.set(color).multiplyScalar(o.shade ?? 1);
@@ -121,9 +129,12 @@ export class Parts {
       uv1[i * 2 + 1] = v * 0.5;
     }
     g.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
-    g.computeBoundingBox();
-    g.computeBoundingSphere();
-    return g;
+    // Shared corners become one indexed vertex: a box drops from 36 vertices to 24 for the GPU to transform.
+    const indexed = mergeVertices(g);
+    g.dispose();
+    indexed.computeBoundingBox();
+    indexed.computeBoundingSphere();
+    return indexed;
   }
 }
 

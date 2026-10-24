@@ -8,7 +8,7 @@ export interface ArtSet {
   /** Canvas for an asset id; designer file if present, otherwise the placeholder. Throws if neither exists. */
   get(id: string): HTMLCanvasElement;
   has(id: string): boolean;
-  /** Numbered sets such as facade-01…, waiter-run-01…; an empty array for an optional set nobody drew. */
+  /** Numbered sets such as waiter-run-01…, cloud-01…; an empty array for an optional set nobody drew. */
   group(prefix: string): HTMLCanvasElement[];
   source(id: string): Source | 'missing';
   /** Raw designer file URL (for HTML images such as gift cards and the logo), or null. */
@@ -21,10 +21,7 @@ interface Finish { edge: number; shadow: boolean }
 const FINISHES: Array<[string, Finish]> = [
   ['item-', { edge: 0.045, shadow: true }],
   ['waiter-', { edge: 0.016, shadow: true }],
-  ['riesenrad-cabin', { edge: 0.03, shadow: false }],
   ['prop-', { edge: 0.01, shadow: false }],
-  ['facade-', { edge: 0.0065, shadow: false }],
-  ['back-', { edge: 0, shadow: false }],
   ['cloud-', { edge: 0.0125, shadow: false }],
   ['texture-', { edge: 0, shadow: false }],
   ['skyline', { edge: 0, shadow: false }],
@@ -42,15 +39,7 @@ const numbered = (prefix: string, count: number, paint: (i: number) => HTMLCanva
   Array.from({ length: count }, (_, i) => [`${prefix}${String(i + 1).padStart(2, '0')}`, () => paint(i)]);
 
 const PLACEHOLDERS: Record<string, Painter> = Object.fromEntries<Painter>([
-  ...numbered('facade-', 6, (i) => P.paintFacadeA(i)),
-  ...numbered('back-', 5, (i) => P.paintBackA(i)),
-  ['landmark-stephansdom', () => P.paintStephansdomA()],
-  ['landmark-karlskirche', () => P.paintKarlskircheA()],
-  ['landmark-hofburg', () => P.paintHofburgA()],
   ['landmark-tram', () => P.paintTramA()],
-  ['riesenrad-wheel', () => P.paintWheelA()],
-  ['riesenrad-cabin', () => P.paintCabinA()],
-  ['riesenrad-support', () => P.paintWheelSupportA()],
   ...Object.entries(EMOJI).map(([k, e]): [string, Painter] => [`item-${k}`, () => P.paperEdge(P.emojiCanvas(e, 128, 0.6), 6)]),
   ...numbered('waiter-run-', 2, (i) => P.paintWaiterA(i)),
   ['prop-lamp', () => P.paintLampA()],

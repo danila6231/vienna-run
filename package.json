@@ -19,7 +19,6 @@
     "package:offline": "npm run build:offline && cp kiosk/launch-offline.bat kiosk/OFFLINE-README.txt dist-offline/ && cd dist-offline && zip -qr ../vienna-run-offline.zip .",
     "migrate-db": "tsx scripts/migrate-db.ts",
     "demo:buildings": "tsx scripts/build-demo.ts",
-    "demo:perf": "tsx scripts/demo-perf.ts",
     "vercel-build": "tsx scripts/migrate-db.ts && npm run build"
   },
   "dependencies": {

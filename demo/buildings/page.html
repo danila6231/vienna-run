@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Federo&family=Josefin+Sans:wght@600&display=swap">
 <style>
-  /* Layout: one column; the game screen at 16:9 on top, the look switch and driving controls under it, the cost table last. */
+  /* Layout: one column; the game screen at 16:9 on top, the driving controls under it, a note on what changed. */
   :root {
     --bg: #efe5d2;
     --surface: #fbf3e2;
@@ -51,13 +51,11 @@
   }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; color: #2b1d17; font: 600 15px var(--font-body); padding: 16px; text-align: center; }
   .controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
-  .looks { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 3px; gap: 3px; }
-  .looks button, .chip {
+  .chip {
     font: 600 14px/1 var(--font-body); color: var(--ink); background: transparent; border: 0; border-radius: 6px;
     padding: 10px 14px; cursor: pointer;
   }
-  .looks button[aria-checked="true"] { background: var(--ink); color: var(--surface); }
-  .looks button:hover:not([aria-checked="true"]), .chip:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
+  .chip:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
   .drive { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .drive .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 4px 0 8px; }
   .chip { border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; font-size: 13px; }
@@ -66,24 +64,12 @@
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .note { font-size: 15px; }
   .note strong { color: var(--ink); font-weight: 600; }
-  .cost { display: grid; gap: 10px; }
-  .table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-  table { border-collapse: collapse; width: 100%; min-width: 560px; font-variant-numeric: tabular-nums; }
-  .note.small { font-size: 13px; }
-  th, td { text-align: right; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th:first-child, td:first-child { text-align: left; }
-  thead th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
-  tbody tr:last-child td { border-bottom: 0; }
-  @media (max-width: 640px) {
-    .controls { flex-direction: column; align-items: stretch; }
-    .looks button { flex: 1 1 40%; }
-  }
 </style>
 
 <main class="wrap">
   <header>
     <h1>Vienna Run street looks</h1>
-    <p>The booth game's street, camera and default speed (90 → 110 km/h). Switch between today's paper cutouts and three 3D looks for the houses and landmarks. Lamps, clouds, the tram and the treats stay as they are.</p>
+    <p>The stylized 3D street as the booth game now draws it, with the game's camera and default speed (90 → 110 km/h). Lamps, clouds, the tram and the treats stay paper cutouts.</p>
   </header>
 
   <section class="viewer" aria-label="Street preview">
@@ -95,12 +81,6 @@
   </section>
 
   <div class="controls">
-    <div class="looks" role="radiogroup" aria-label="Look">
-      <button type="button" role="radio" id="look-paper" data-look="paper" aria-checked="false">Paper (today)</button>
-      <button type="button" role="radio" id="look-stylized" data-look="stylized" aria-checked="true">Stylized 3D</button>
-      <button type="button" role="radio" id="look-lowpoly" data-look="lowpoly" aria-checked="false">Low-poly</button>
-      <button type="button" role="radio" id="look-realistic" data-look="realistic" aria-checked="false">Closer to realistic</button>
-    </div>
     <div class="drive">
       <button type="button" class="chip" id="drive" aria-pressed="false">Pause</button>
       <span class="label">Jump to</span>
@@ -112,21 +92,6 @@
     </div>
   </div>
 
-  <p class="note" data-note="paper" hidden><strong>Paper (today).</strong> Flat painted cards with a white paper edge and no lighting. The left side is tinted darker to fake shade.</p>
-  <p class="note" data-note="stylized"><strong>Stylized 3D.</strong> Real depth: windows set into the walls, frames and pediments, cornices, balconies, striped awnings and roofs, lit by a low sun from the upper left. Keeps the painted colours.</p>
-  <p class="note" data-note="lowpoly" hidden><strong>Low-poly.</strong> The same houses with the detail stripped back to blocks and flat-shaded faces. The lightest of the three for the booth PC.</p>
-  <p class="note" data-note="realistic" hidden><strong>Closer to realistic.</strong> The stylized models plus plaster texture, reflective glass, soft light from the sky, and real shadows on the street. The heaviest of the three.</p>
-
-  <section class="cost" aria-labelledby="cost-title">
-    <h2 id="cost-title">What each look costs</h2>
-    <p class="note">The counter on the screen shows your device live. The table was measured over 5 seconds of driving from the start line, at 1600 × 900, then again with the CPU slowed 4×, the check the design spec uses for the booth PC (the game lowers its detail by itself below 50 fps).</p>
-    <div class="table-box">
-      <table>
-        <thead><tr><th>Look</th><th>Draw calls</th><th>Triangles</th><th>fps</th><th>fps, CPU 4× slower</th></tr></thead>
-        <tbody><!-- perf rows --></tbody>
-      </table>
-    </div>
-    <p class="note small"><!-- perf caption --></p>
-  </section>
+  <p class="note"><strong>Side walls.</strong> Every house now has windows on both sides, with the string course, floor bands, frieze and cornice wrapping round the corner, corner stones on the plain fronts, a small shop window at the back and a drainpipe. The back-row blocks, the Riesenrad's base house and the landmarks' end walls got windows too. Neighbouring houses hide most of it; it shows above a lower neighbour and around the plazas. Jump to a landmark, pause, and use <strong>Look around</strong> to see the sides up close.</p>
 </main>
 <!-- bundle -->

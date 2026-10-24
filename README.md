@@ -64,6 +64,8 @@ shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
 - **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
+- **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/`. `npm run demo:buildings`
+  builds a one-file street viewer (`dist-demo/vienna-run-street-looks.html`) with a free camera for checking them.
 
 ## Deploy
 Production: https://vienna-run.vercel.app (Vercel project `vienna-run`, built from `main` of
