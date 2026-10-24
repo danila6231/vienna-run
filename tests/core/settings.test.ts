@@ -8,21 +8,21 @@ import {
 } from '../../src/core/settings';
 
 describe('defaults', () => {
-  it('reproduce today\'s game', () => {
+  it("are the booth's tuned round", () => {
     const cfg = buildConfig(defaultSettings());
-    expect(cfg.baseSpeed).toBeCloseTo(50 / 3.6);
-    expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(63 / 3.6);
-    expect(cfg.runLength).toBeGreaterThan(590);
-    expect(cfg.runLength).toBeLessThan(605);
-    expect(cfg.spawn).toMatchObject({ obstacles: 11, treats: 31, mode: 'random' });
-    expect(cfg.questions).toMatchObject({ perRun: 3, timeLimit: 10 });
+    expect(cfg.baseSpeed).toBeCloseTo(90 / 3.6);
+    expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(110 / 3.6);
+    expect(cfg.runLength).toBe(1250);
+    expect(cfg.spawn).toMatchObject({ obstacles: 40, treats: 75, mode: 'fixed' });
+    expect(cfg.questions).toMatchObject({ perRun: 0, timeLimit: 10 });
     for (const [k, v] of Object.entries(CONFIG.items)) expect(cfg.items[k as keyof typeof CONFIG.items].points).toBe(v.points);
+    expect(warnings(defaultSettings())).toEqual([]);
   });
-  it('start in Normal with gifts hidden, questions and leaderboard on, PIN 2468, board "booth"', () => {
+  it('start Custom with gifts and questions off, leaderboard on, PIN 2468, board "booth"', () => {
     const s = defaultSettings();
-    expect(s.preset).toBe('normal');
+    expect(s.preset).toBe('custom');
     expect(featuresOf(s)).toEqual({ showGifts: false, leaderboard: true });
-    expect(s.questions.enabled).toBe(true);
+    expect(s.questions.enabled).toBe(false);
     expect(s.pin).toBe('2468');
     expect(s.leaderboard.board).toBe('booth');
   });
@@ -84,7 +84,11 @@ describe('sanitize', () => {
     expect(s.obstacles).toBe(0);
   });
   it('re-detects the preset instead of trusting the stored label', () => {
-    expect(sanitize({ ...defaultSettings(), preset: 'hard' }).preset).toBe('normal');
+    expect(sanitize({ ...applyPreset(defaultSettings(), 'normal'), preset: 'hard' }).preset).toBe('normal');
+  });
+  it('keeps the default item layout when the stored one is missing or unknown', () => {
+    expect(sanitize({ ...defaultSettings(), mode: 'zigzag' }).mode).toBe('fixed');
+    expect(sanitize({ ...defaultSettings(), mode: 'random' }).mode).toBe('random');
   });
 });
 
@@ -117,11 +121,11 @@ describe('warnings', () => {
     for (const p of ['easy', 'normal', 'hard'] as const) expect(warnings(applyPreset(defaultSettings(), p))).toEqual([]);
   });
   it('explain when a short, slow round cannot fit the treats', () => {
-    const w = warnings({ ...defaultSettings(), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 });
+    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 });
     expect(w.join(' ')).toMatch(/about \d+ of 31 treats fit/);
   });
   it('explain when too many items are asked for', () => {
-    const w = warnings({ ...defaultSettings(), obstacles: 40, treats: 80 });
+    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), obstacles: 40, treats: 80 });
     expect(w.join(' ')).toMatch(/of 80 treats fit/);
   });
 });

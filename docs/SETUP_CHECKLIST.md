@@ -24,8 +24,9 @@ Do these on the booth PC on setup day, in order.
 9. Run the self-check: open the game with `?check=1` (see `OFFLINE-README.txt`).
    - Touch all 9 squares, especially the corners. All must turn green.
    - Frame rate should read **50 fps or more** after a few seconds (lower is OK: the game reduces detail by itself).
-10. **Settings:** press **Start the game** to leave the self-check. On the start screen, hold the top-left corner for 3 s and enter the team PIN
-    (default 2468; change it and write it down). Load the agreed difficulty with **Share code →
+10. **Settings:** press **Start the game** to leave the self-check. On the start screen, press **⚙ Settings** (top left;
+    if it is hidden, hold the top-left corner for 3 s and enter the team PIN, default 2468). The defaults are already the
+    booth's tuned round; to use a different one, load it with **Share code →
     Load code** (paste the code from the team chat), check the values, press **Save**.
 11. **Leaderboard:** to try it without leaving a test name on the real board, set settings → Leaderboard →
     board name to **test**, Save, finish one round, save a name, and check it shows on the start screen.

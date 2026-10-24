@@ -21,7 +21,13 @@ const type = (f: HTMLInputElement | HTMLTextAreaElement, value: string) => {
   f.dispatchEvent(new Event('change', { bubbles: true }));
 };
 
-function setup(current: Settings = defaultSettings(), sections?: Section[]) {
+/** Normal difficulty with bonus questions on: the panel tests below start from it, not from the booth defaults. */
+function normal(): Settings {
+  const s = applyPreset(defaultSettings(), 'normal');
+  return { ...s, questions: { ...s.questions, enabled: true } };
+}
+
+function setup(current: Settings = normal(), sections?: Section[]) {
   const onSave = vi.fn<(s: Settings) => void>();
   const onClose = vi.fn();
   const panel = new SettingsPanel(document.body, { onSave, onClose, sections });
@@ -106,7 +112,7 @@ describe('SettingsPanel', () => {
     const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' } });
     click(root, 'Reset to defaults');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'normal', pin: '1357', leaderboard: { enabled: true, board: 'booth-2' } }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 40, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' } }));
   });
   it('loads a share code, and rejects a bad one without changing anything', () => {
     const { root } = setup();

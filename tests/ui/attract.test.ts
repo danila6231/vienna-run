@@ -15,7 +15,7 @@ describe('AttractScreen', () => {
     expect(text).toContain('Tap anywhere to play');
     expect(text).toContain('Sachertorte');
     expect(text).toContain('+15');
-    expect(text).toContain('−10');
+    expect(text).toContain('−20');
     expect(s.root.querySelectorAll('.legend img')).toHaveLength(6);
   });
   it('shows the points from the current settings', () => {

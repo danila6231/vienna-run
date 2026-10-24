@@ -58,12 +58,18 @@ const PIN_RE = /^\d{4}$/;
 export function defaultSettings(): Settings {
   return {
     version: 1,
-    preset: 'normal',
-    ...PRESETS.normal,
+    preset: 'custom',
+    // The booth's tuned round (its share code, 2026-10-24): faster and busier than Hard, the same counts for everyone.
+    roundSeconds: 45,
+    startSpeedKmh: 90,
+    endSpeedKmh: 110,
+    mode: 'fixed',
+    obstacles: 40,
+    treats: 75,
     points: Object.fromEntries(Object.entries(CONFIG.items).map(([k, v]) => [k, v.points])) as Record<ItemType, number>,
     tiers: CONFIG.tiers.map((t) => ({ ...t })),
     showGifts: false,
-    questions: { enabled: true, perRun: CONFIG.questions.perRun, timeLimit: CONFIG.questions.timeLimit },
+    questions: { enabled: false, perRun: CONFIG.questions.perRun, timeLimit: CONFIG.questions.timeLimit },
     leaderboard: { enabled: true, board: 'booth' },
     pin: '2468',
   };
@@ -126,7 +132,7 @@ export function sanitize(raw: unknown): Settings {
     roundSeconds: clamp(r.roundSeconds, LIMITS.roundSeconds, d.roundSeconds),
     startSpeedKmh: start,
     endSpeedKmh: Math.max(start, clamp(r.endSpeedKmh, LIMITS.endSpeedKmh, d.endSpeedKmh)),
-    mode: r.mode === 'fixed' ? 'fixed' : 'random',
+    mode: r.mode === 'fixed' || r.mode === 'random' ? r.mode : d.mode,
     obstacles: clamp(r.obstacles, LIMITS.obstacles, d.obstacles),
     treats: clamp(r.treats, LIMITS.treats, d.treats),
     points,
