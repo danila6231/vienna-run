@@ -5,6 +5,8 @@ import type { ItemType } from './types';
 
 export type Preset = 'easy' | 'normal' | 'hard' | 'custom';
 export type Mode = 'random' | 'fixed';
+/** How the street's houses and landmarks are drawn: 3D models, or the lighter paper cutouts as a fallback. */
+export type StreetLook = '3d' | 'paper';
 
 export interface Settings {
   version: 1;
@@ -20,6 +22,8 @@ export interface Settings {
   showGifts: boolean;
   questions: { enabled: boolean; perRun: number; timeLimit: number };
   leaderboard: { enabled: boolean; board: string };
+  /** Per device, like the PIN and the board: it depends on what this PC's graphics can do. */
+  street: StreetLook;
   /** 4 digits, stored as is: a 4-digit PIN has only 10,000 values, so hashing would add nothing. */
   pin: string;
 }
@@ -71,6 +75,7 @@ export function defaultSettings(): Settings {
     showGifts: false,
     questions: { enabled: false, perRun: CONFIG.questions.perRun, timeLimit: CONFIG.questions.timeLimit },
     leaderboard: { enabled: true, board: 'booth' },
+    street: '3d',
     pin: '2468',
   };
 }
@@ -147,6 +152,7 @@ export function sanitize(raw: unknown): Settings {
       enabled: typeof lb.enabled === 'boolean' ? lb.enabled : d.leaderboard.enabled,
       board: typeof lb.board === 'string' && BOARD_RE.test(lb.board) ? lb.board : d.leaderboard.board,
     },
+    street: r.street === '3d' || r.street === 'paper' ? r.street : d.street,
     pin: typeof r.pin === 'string' && PIN_RE.test(r.pin) ? r.pin : d.pin,
   };
   s.preset = detectPreset(s);
@@ -233,22 +239,23 @@ function fromBase64Url(code: string): string {
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 }
 
-/** A copy/paste code with every setting except the PIN and the leaderboard (each device keeps its own board). */
+/** A copy/paste code with every setting except the per-device ones: the PIN, the leaderboard and the street look. */
 export function toShareCode(s: Settings): string {
   const copy: Partial<Settings> = { ...s };
   delete copy.pin;
   delete copy.leaderboard;
+  delete copy.street;
   return SHARE_PREFIX + toBase64Url(JSON.stringify(copy));
 }
 
-/** Settings from a share code (keeping this device's PIN and leaderboard), or null if the code is not valid. */
+/** Settings from a share code (keeping this device's PIN, leaderboard and street look), or null if the code is not valid. */
 export function fromShareCode(code: string, current: Settings): Settings | null {
   const c = code.trim();
   if (!c.startsWith(SHARE_PREFIX)) return null;
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(c.slice(SHARE_PREFIX.length)));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    return sanitize({ ...(parsed as object), pin: current.pin, leaderboard: { ...current.leaderboard } });
+    return sanitize({ ...(parsed as object), pin: current.pin, leaderboard: { ...current.leaderboard }, street: current.street });
   } catch {
     return null;
   }

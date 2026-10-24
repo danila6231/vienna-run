@@ -27,3 +27,23 @@ test('staff open settings with the Settings button, pick Hard, and the next roun
   expect(await page.evaluate(() => (window as any).__vr.baseSpeed)).toBeCloseTo(58 / 3.6, 2);
   expect(errors).toEqual([]);
 });
+
+test('switching the street to Paper restarts the game in the paper look, and a round still plays', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?seed=4');
+  await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
+  expect(await page.evaluate(() => (window as any).__vr.street)).toBe('3d');
+
+  await page.locator('.staff-open').click();
+  await page.locator('.settings button', { hasText: /^Paper \(lighter\)$/ }).click();
+  await Promise.all([page.waitForEvent('load'), page.locator('.settings button', { hasText: /^Save$/ }).click()]);
+  await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
+  expect(await page.evaluate(() => (window as any).__vr.street)).toBe('paper');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vienna-run:settings') ?? '{}').street)).toBe('paper');
+
+  const vp = page.viewportSize()!;
+  await page.mouse.click(vp.width / 2, vp.height / 2);
+  await page.waitForFunction(() => (window as any).__vr?.screen === 'run', null, { timeout: 30_000 });
+  expect(errors).toEqual([]);
+});

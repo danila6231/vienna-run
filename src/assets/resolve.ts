@@ -1,10 +1,10 @@
-/** './art/cloud-01.png' → 'cloud-01' */
+/** './art/facade-01.png' → 'facade-01' */
 export function baseName(path: string): string {
   const file = path.split('/').pop() ?? path;
   return file.replace(/\.(png|webp|svg)$/i, '');
 }
 
-/** Numbered sets (waiter-run-01…, cloud-01…): designer files replace the whole placeholder set. */
+/** Numbered sets (facade-01…, waiter-run-01…): designer files replace the whole placeholder set. */
 export function groupIds(prefix: string, designer: readonly string[], placeholders: readonly string[]): { ids: string[]; fromDesigner: boolean } {
   const fromDesigner = designer.filter((id) => id.startsWith(prefix)).sort();
   if (fromDesigner.length > 0) return { ids: fromDesigner, fromDesigner: true };

@@ -31,7 +31,9 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   per round; "Random each round" or "Same for everyone".
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Bonus questions:** on/off, how many per round, seconds to answer.
-- **Share code:** copy every setting except the PIN and the leaderboard board to another device.
+- **Graphics:** the street in **3D** (default) or **Paper (lighter)**, the flat cutout houses and landmarks, as a
+  fallback for a PC that can't keep 50 fps. Per device; saving a change restarts the game.
+- **Share code:** copy every setting except the PIN, the leaderboard board and the street look to another device.
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
 defaults (also what **Reset to defaults** restores) are the booth's tuned round: 45 s at 90→110 km/h,
@@ -64,7 +66,8 @@ shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
 - **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
-- **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/`. `npm run demo:buildings`
+- **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/` (the paper cards remain as the
+  Graphics → Paper fallback). `npm run demo:buildings`
   builds a one-file street viewer (`dist-demo/vienna-run-street-looks.html`) with a free camera for checking them.
 
 ## Deploy

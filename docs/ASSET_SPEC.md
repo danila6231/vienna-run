@@ -5,7 +5,8 @@ from Stephansdom to the Riesenrad, collecting treats and dodging Krampus and bom
 and landmarks are **3D models built in code** (`src/render/buildings/`), lit from the upper left
 in the palette below. Everything else is a flat, illustrated paper cutout standing in that street:
 the waiter, the treats, lamps, clouds, the tram, the finish banner. This brief covers those
-cutouts. To see the street, run `npm run demo:buildings` and open
+cutouts, plus the paper houses and landmarks that staff can switch to on a PC too weak for 3D
+(settings → Graphics → Paper); those rows are marked *Paper look only* and matter least. To see the street, run `npm run demo:buildings` and open
 `dist-demo/vienna-run-street-looks.html`.
 
 ## The short version
@@ -43,7 +44,15 @@ yet keeps its placeholder, so you can deliver piece by piece.
 
 | File name | Count | Size (px) | Notes |
 |---|---|---|---|
+| `facade-01.png` … `facade-08.png` | 6–8 | 1024×1536 (2:3) | One building front, 8 m wide × 12 m tall. Ground floor touches the bottom edge. **Left and right edges straight and flush, no padding** (buildings stand side by side). Transparent sky above an interesting roofline (gables, domes, statues). Vary the shop signs: Café, Konditorei, Bäckerei, Apotheke… *Paper look only.* |
+| `back-01.png` … | 4–6 | 640×1024 (5:8) | Buildings in the second row. Simpler and low contrast; the game adds haze. *Paper look only.* |
+| `landmark-stephansdom.png` | 1 | long side 2048 | Shown 33 m tall. Any aspect ratio. The zigzag roof tiles are the signature. *Paper look only.* |
+| `landmark-karlskirche.png` | 1 | long side 2048 | Shown 23.4 m tall. Dome, portico, two big columns. *Paper look only.* |
+| `landmark-hofburg.png` | 1 | long side 2048 | Shown 21 m tall. Michaelertor-style dome. *Paper look only.* |
 | `landmark-tram.png` | 1 | about 2048×512 | Side view of a red-and-white Vienna tram, shown 14 m long. |
+| `riesenrad-wheel.png` | 1 | 2048×2048 | The wheel only: rims and spokes, **no cabins**. The wheel's center must be the image center (the game spins it). Shown 29 m wide. *Paper look only.* |
+| `riesenrad-cabin.png` | 1 | 256×256 | One red cabin, hanging upright. The game places 15 of them around the wheel. *Paper look only.* |
+| `riesenrad-support.png` | 1 | 2048 wide | Legs and base building. The hub point is **top center**; the bottom edge is the ground. *Paper look only.* |
 | `item-sacher.png`, `item-kipferl.png`, `item-melange.png`, `item-mozart.png`, `item-krampus.png`, `item-bomb.png` | 6 | 512×512 | Object fills about 70% of the canvas, centered, 3/4 front view. Must read clearly at 60–90 px on screen. Treats warm and tasty-looking; Krampus and the bomb dark/red and instantly "bad". |
 | `waiter-run-01.png` … `waiter-run-08.png` | 6–8 | 512×768 per frame | Herr Ober **seen from behind**: black tailcoat, slick hair, right arm raised holding a silver tray, white napkin over the left forearm. One full running cycle. |
 | `waiter-stumble-01.png` … | 0–2 | 512×768 | Optional: hit by a bomb. If missing, the game wobbles the run frames instead. |

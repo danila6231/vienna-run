@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
 import type { Run } from '../core/run';
+import type { StreetLook } from '../core/settings';
 import { createBuildingSet } from './buildings';
 import { createItems } from './items';
 import { pixelRatioFor } from './quality';
@@ -21,16 +22,17 @@ export interface World {
   setQuality(level: QualityLevel): void;
 }
 
-export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: number): World {
+export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: number, look: StreetLook = '3d'): World {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(pixelRatioFor('high', window.devicePixelRatio));
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.5, 600);
   const sky = createSky(scene, art);
-  const buildings = createBuildingSet();
-  buildings.light(scene);
-  const street = createStreet(scene, art, buildings.houses);
-  const landmarks = createLandmarks(scene, art, buildings.landmarks);
+  // The paper look is the fallback for weak PCs: flat cards, no lights, none of the 3D geometry built.
+  const buildings = look === '3d' ? createBuildingSet() : null;
+  buildings?.light(scene);
+  const street = createStreet(scene, art, buildings?.houses);
+  const landmarks = createLandmarks(scene, art, buildings?.landmarks);
   const items = createItems(scene, art, laneWidth);
   const runner = createRunner(scene, art, items, laneWidth);
   const v = new THREE.Vector3();

@@ -4,11 +4,12 @@ import type { Route } from '../core/route';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
 import { initialPositions, recycle, type RowSpec } from './rows';
+import { heightForWidth } from './sizing';
 
 export interface Street {
   update(dist: number, route: Route): void;
   reset(): void;
-  /** False on the low graphics level: hides the back row and draws every house in its lite geometry. */
+  /** False on the low graphics level: hides the back row and draws every 3D house in its lite geometry. */
   setDetail(high: boolean): void;
 }
 
@@ -21,7 +22,7 @@ export interface Variant {
   lite?: THREE.BufferGeometry;
 }
 
-/** The 3D houses for the facade rows: front at local z = 0 facing +z, base at y = 0 (h = 0). */
+/** 3D houses for the facade rows (front at local z = 0 facing +z, base at y = 0, h = 0); without them, paper cards. */
 export interface HouseRows {
   front: Variant[];
   back: Variant[];
@@ -42,7 +43,7 @@ const MID = -140; // its centre: from 20 m behind the runner to 300 m ahead
 const DASHES = 40; // lane dashes per line, one every 8 m
 const LITE_AHEAD = 100; // houses further ahead than this use their lite geometry (a quarter lost in fog by then)
 
-export function createStreet(scene: THREE.Scene, art: ArtSet, houses: HouseRows): Street {
+export function createStreet(scene: THREE.Scene, art: ArtSet, houses?: HouseRows): Street {
   const basic = (o: THREE.MeshBasicMaterialParameters) => new THREE.MeshBasicMaterial(o);
   const flat = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
     const m = new THREE.Mesh(geo, mat);
@@ -104,10 +105,19 @@ export function createStreet(scene: THREE.Scene, art: ArtSet, houses: HouseRows)
     });
     rows.push({ ...spec, kind, side, meshes, variants, pick: meshes.map((_, i) => i % variants.length), p: initialPositions(spec) });
   };
-  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, houses.front, -7.9, Math.PI / 2);
-  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, houses.front, 7.9, -Math.PI / 2);
-  addRow('back', -1, { count: 24, spacing: 10, offset: 3 }, houses.back, -13.5, Math.PI / 2);
-  addRow('back', 1, { count: 24, spacing: 10, offset: 8 }, houses.back, 13.5, -Math.PI / 2);
+  /** Paper cards of a fixed width (they tile along the street); each image keeps its own shape. */
+  const cards = (canvases: HTMLCanvasElement[], width: number, tint?: number): Variant[] =>
+    canvases.map((c) => {
+      const h = heightForWidth(width, c.width / c.height);
+      return { geo: new THREE.PlaneGeometry(width, h), mat: basic({ map: toTexture(c), alphaTest: 0.5, ...(tint ? { color: tint } : {}) }), h };
+    });
+  const front = (tint?: number) => houses?.front ?? cards(art.group('facade-'), 8, tint);
+  // The left side faces away from the light, so its paper cards are tinted a little darker (3D houses are lit).
+  addRow('front', -1, { count: 27, spacing: 8, offset: 0 }, front(0xe7dfd4), -7.9, Math.PI / 2);
+  addRow('front', 1, { count: 27, spacing: 8, offset: 4 }, front(), 7.9, -Math.PI / 2);
+  const backs = houses?.back ?? cards(art.group('back-'), 10);
+  addRow('back', -1, { count: 24, spacing: 10, offset: 3 }, backs, -13.5, Math.PI / 2);
+  addRow('back', 1, { count: 24, spacing: 10, offset: 8 }, backs, 13.5, -Math.PI / 2);
   const lampArt = art.get('prop-lamp');
   const lampH = 4.5;
   const lamps: Variant[] = [{ geo: new THREE.PlaneGeometry((lampH * lampArt.width) / lampArt.height, lampH), mat: basic({ map: toTexture(lampArt), alphaTest: 0.5 }), h: lampH }];

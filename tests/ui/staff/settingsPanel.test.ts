@@ -90,6 +90,12 @@ describe('SettingsPanel', () => {
     click(root, 'Save');
     expect(onSave.mock.calls[0][0].questions.enabled).toBe(false);
   });
+  it('switches the street to the paper look', () => {
+    const { root, onSave } = setup();
+    click(root, 'Paper (lighter)');
+    click(root, 'Save');
+    expect(onSave.mock.calls[0][0].street).toBe('paper');
+  });
   it('edits the gift ladder', () => {
     const { root, onSave } = setup();
     click(root, 'Show gifts to players');
@@ -108,11 +114,11 @@ describe('SettingsPanel', () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
-  it('Reset to defaults keeps the PIN and the board name', () => {
-    const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' } });
+  it('Reset to defaults keeps the PIN, the board name and the street look', () => {
+    const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper' });
     click(root, 'Reset to defaults');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 40, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' } }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 40, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper' }));
   });
   it('loads a share code, and rejects a bad one without changing anything', () => {
     const { root } = setup();

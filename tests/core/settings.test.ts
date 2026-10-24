@@ -25,6 +25,7 @@ describe('defaults', () => {
     expect(s.questions.enabled).toBe(false);
     expect(s.pin).toBe('2468');
     expect(s.leaderboard.board).toBe('booth');
+    expect(s.street).toBe('3d');
   });
 });
 
@@ -86,6 +87,10 @@ describe('sanitize', () => {
   it('re-detects the preset instead of trusting the stored label', () => {
     expect(sanitize({ ...applyPreset(defaultSettings(), 'normal'), preset: 'hard' }).preset).toBe('normal');
   });
+  it('keeps a known street look and falls back to 3D for anything else', () => {
+    expect(sanitize({ ...defaultSettings(), street: 'paper' }).street).toBe('paper');
+    expect(sanitize({ ...defaultSettings(), street: 'vr' }).street).toBe('3d');
+  });
   it('keeps the default item layout when the stored one is missing or unknown', () => {
     expect(sanitize({ ...defaultSettings(), mode: 'zigzag' }).mode).toBe('fixed');
     expect(sanitize({ ...defaultSettings(), mode: 'random' }).mode).toBe('random');
@@ -100,6 +105,12 @@ describe('share codes', () => {
     expect(code).not.toContain('9999');
     const loaded = fromShareCode(code, defaultSettings());
     expect(loaded).toEqual({ ...tuned, preset: 'custom', pin: '2468' });
+  });
+  it("never move a device to another device's street look", () => {
+    const booth = { ...defaultSettings(), street: 'paper' as const };
+    const laptop = defaultSettings();
+    expect(fromShareCode(toShareCode(booth), laptop)?.street).toBe('3d');
+    expect(fromShareCode(toShareCode(laptop), booth)?.street).toBe('paper');
   });
   it("never move a device to another device's board", () => {
     const booth = { ...defaultSettings(), obstacles: 18, leaderboard: { enabled: true, board: 'booth' } };

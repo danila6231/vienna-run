@@ -102,8 +102,9 @@ placeholder painters and camera rig get ported into the real project.
 
 ## Art & asset requirements
 **Every art file is a flat 2D image.** Since 2026-10-24 the houses and landmarks are 3D models
-built in code instead of images (the paper facades read too obviously as paper). Perspective,
-motion, Riesenrad rotation, bobbing and shadows come from code. `docs/ASSET_SPEC.md` is the designer-facing
+built in code instead of images (the paper facades read too obviously as paper). The paper cards
+stay as a per-device fallback (settings → Graphics → Paper). Perspective, motion, Riesenrad
+rotation, bobbing and shadows come from code. `docs/ASSET_SPEC.md` is the designer-facing
 version of this section (written in M1 so the designer can start early).
 
 **Technical rules for every image:**

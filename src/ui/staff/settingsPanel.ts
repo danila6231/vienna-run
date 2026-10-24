@@ -114,6 +114,18 @@ const questions: Section = {
   },
 };
 
+const graphics: Section = {
+  title: 'Graphics',
+  render({ draft: d, edit }) {
+    const box = el('div');
+    box.append(
+      choice('Street', [{ value: '3d', label: '3D' }, { value: 'paper', label: 'Paper (lighter)' }] as const, d.street, (v) => edit((x) => { x.street = v; })),
+      note('Paper draws the houses and landmarks as flat cutouts. Use it if this PC cannot keep the frame rate at 50 fps or more (the self-check screen shows it). This device only; the game restarts when you save a change.'),
+    );
+    return box;
+  },
+};
+
 const pin: Section = {
   title: 'PIN',
   render({ draft: d, edit }) {
@@ -163,7 +175,7 @@ const share: Section = {
       ctx.notice('Code loaded. Check the values, then press Save.');
     });
     const box = el('div');
-    box.append(note('Moves these settings to another device: everything except the PIN and the leaderboard board, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
+    box.append(note('Moves these settings to another device: everything except the PIN, the leaderboard board and the street look, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
     return box;
   },
 };
@@ -184,7 +196,7 @@ export class SettingsPanel {
   private idleTimer = 0;
 
   constructor(parent: HTMLElement, private readonly o: PanelOptions) {
-    this.sections = [difficulty, pointsAndGifts, questions, ...(o.sections ?? []), pin, share];
+    this.sections = [difficulty, pointsAndGifts, questions, graphics, ...(o.sections ?? []), pin, share];
     const panel = this;
     this.ctx = {
       get draft() {
@@ -206,8 +218,8 @@ export class SettingsPanel {
     const actions = el('div', 'st-actions');
     actions.append(
       button('Reset to defaults', () => {
-        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard } }), true);
-        this.ctx.notice('Defaults restored (PIN and board name kept). Press Save to keep them.');
+        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard }, street: x.street }), true);
+        this.ctx.notice('Defaults restored (PIN, board name and street look kept). Press Save to keep them.');
       }),
       button('Cancel', () => this.close()),
       this.saveButton,

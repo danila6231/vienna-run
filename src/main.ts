@@ -16,7 +16,7 @@ import { installWatchdog, shouldRefresh } from './app/watchdog';
 import { loadArt } from './assets/manifest';
 import { CONFIG } from './config';
 import { validateBank } from './core/questions';
-import { buildConfig, featuresOf } from './core/settings';
+import { buildConfig, featuresOf, type StreetLook } from './core/settings';
 import { BAD_TYPES, GOOD_TYPES, type ItemType } from './core/types';
 import bankJson from './data/questions.json';
 import { I18n } from './i18n/i18n';
@@ -84,7 +84,8 @@ async function boot(): Promise<void> {
   setupUpdates();
 
   const art = await loadArt();
-  const world = createWorld(canvas, art, CONFIG.laneWidth);
+  let settings = loadSettings();
+  const world = createWorld(canvas, art, CONFIG.laneWidth, settings.street);
   const fit = () => world.resize(stage.clientWidth, stage.clientHeight);
   fit();
   new ResizeObserver(fit).observe(stage);
@@ -99,7 +100,6 @@ async function boot(): Promise<void> {
     return;
   }
 
-  let settings = loadSettings();
   // Leaderboard: kept on this device first; uploaded to Supabase when the hosted build has its details.
   // Autoplay (bot) rounds never touch it beyond the device, and the USB copy has no details at all.
   const remoteCfg = params.autoplay ? null : remoteConfigFrom(import.meta.env);
@@ -166,11 +166,14 @@ async function boot(): Promise<void> {
   const panel = new SettingsPanel(stage, {
     sections: [leaderboardSection(scores, downloadText)],
     onSave: (s) => {
+      // The street is built once at start-up, so a new street look takes a restart (settings and scores are saved first).
+      const restart = s.street !== settings.street;
       settings = s;
       saveSettings(s);
       scores.setBoard(s.leaderboard.board);
       pushBoard();
       game.configure(buildConfig(s), featuresOf(s));
+      if (restart) location.reload();
     },
     onClose: () => {
       staffOpen = false;
@@ -221,12 +224,12 @@ async function boot(): Promise<void> {
       game.render(Math.min(sec, 0.1) * params.speed);
     },
   );
-  exposeDebugHook(game, canvas);
+  exposeDebugHook(game, canvas, settings.street);
 }
 
 /** Read-only state for the Playwright tests. */
-function exposeDebugHook(game: Game, canvas: HTMLCanvasElement): void {
-  const hook = { cycles: 0, screen: 'attract' as string, errors: [] as string[], contextLost: false, baseSpeed: 0 };
+function exposeDebugHook(game: Game, canvas: HTMLCanvasElement, street: StreetLook): void {
+  const hook = { cycles: 0, screen: 'attract' as string, errors: [] as string[], contextLost: false, baseSpeed: 0, street };
   (window as unknown as { __vr: typeof hook }).__vr = hook;
   window.addEventListener('error', (e) => hook.errors.push(e.message));
   canvas.addEventListener('webglcontextlost', () => {
