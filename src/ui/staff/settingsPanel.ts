@@ -110,7 +110,7 @@ const questions: Section = {
       numberField('Level 1 points', d.questions.level1Points, LIMITS.questionPoints, (v) => edit((x) => { x.questions.level1Points = v; }), 'points'),
       numberField('Level 2 points', d.questions.level2Points, LIMITS.questionPoints, (v) => edit((x) => { x.questions.level2Points = v; }), 'points'),
       numberField('Time to answer', d.questions.timeLimit, LIMITS.timeLimit, (v) => edit((x) => { x.questions.timeLimit = v; }), 's'),
-      note('Every player gets two questions: a row of ❓ across all three lanes halfway (a random Level 1 question) and another 5 s before the finish (Level 2). A right answer gives these points; a wrong answer or no answer gives 0.'),
+      note('Every player gets two questions: a row of ❓ across all three lanes halfway (a random Level 1 question) and another right before the finish line (Level 2). A right answer gives these points; a wrong answer or no answer gives 0.'),
     );
     return box;
   },

@@ -14,7 +14,7 @@ type Pattern = { kind: 'obstacle'; size: 1 | 2; reward: boolean } | { kind: 'lin
 
 const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
 
-/** Where the ❓ rows cross the road: halfway (Level 1) and `lastRowLead` seconds before the finish (Level 2). */
+/** Where the ❓ rows cross the road: halfway (Level 1) and `lastRowLead` seconds before the finish line (Level 2). */
 export function questionRows(cfg: GameConfig): Array<{ at: number; level: QuestionLevel }> {
   if (!cfg.questions.enabled) return [];
   const endSpeed = cfg.baseSpeed * (1 + cfg.speedRamp);
@@ -34,7 +34,6 @@ export function questionRows(cfg: GameConfig): Array<{ at: number; level: Questi
  */
 export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   const { firstAt, finishClear, mode } = cfg.spawn;
-  const lastAt = cfg.runLength - finishClear;
   const items: Item[] = [];
   let id = 0;
   const add = (at: number, lane: Lane, type: RoadType, level?: QuestionLevel) => {
@@ -44,6 +43,10 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   for (const r of rows) for (const lane of LANES) add(r.at, lane, 'question', r.level);
   // The playable stretch minus the empty road around the rows: patterns go into these segments.
   const speedAt = (d: number) => cfg.baseSpeed * (1 + cfg.speedRamp * (d / cfg.runLength));
+  // The finish is kept clear, unless the last row stands in that stretch: then items run on up to its run-up.
+  let lastAt = cfg.runLength - finishClear;
+  const finalRow = rows.at(-1);
+  if (finalRow && finalRow.at > lastAt) lastAt = Math.max(lastAt, finalRow.at - ROW_CLEAR.before * speedAt(finalRow.at));
   const segments: Array<readonly [number, number]> = [];
   let from = firstAt;
   for (const r of rows) {

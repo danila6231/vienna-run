@@ -33,8 +33,8 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   for a different street.
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Questions:** on/off (on by default), points for a right Level 1 and Level 2 answer (15 and 20), seconds to
-  answer. Every player meets two rows of ❓ across all three lanes: halfway (a random Level 1 question) and 5 s before
-  the finish (a random Level 2 question). A wrong answer or no answer gives 0.
+  answer. Every player meets two rows of ❓ across all three lanes: halfway (a random Level 1 question) and right
+  before the finish line (a random Level 2 question). A wrong answer or no answer gives 0.
 - **Sound:** the background music on or off. Per device.
 - **Graphics:** the street in **3D** (default) or **Paper (lighter)**, the flat cutout houses and landmarks, as a
   fallback for a PC that can't keep 50 fps. Per device; saving a change restarts the game.

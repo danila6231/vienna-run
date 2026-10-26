@@ -27,8 +27,8 @@ describe('generateItems', () => {
   it('is deterministic for a seed', () => {
     expect(run(11)).toEqual(run(11));
   });
-  it.each(['random', 'fixed'] as const)('keeps items inside the playable stretch (%s mode)', (mode) => {
-    const cfg = withSpawn({ mode });
+  it.each(['random', 'fixed'] as const)('keeps items inside the playable stretch with questions off (%s mode)', (mode) => {
+    const cfg = noQuestions(withSpawn({ mode }));
     for (const s of seeds) for (const it of run(s, cfg)) {
       expect(it.at).toBeGreaterThanOrEqual(cfg.spawn.firstAt);
       expect(it.at).toBeLessThan(cfg.runLength - cfg.spawn.finishClear);
@@ -90,8 +90,10 @@ describe('generateItems', () => {
 
 describe('question rows', () => {
   const speedAt = (cfg: GameConfig, d: number) => cfg.baseSpeed * (1 + cfg.speedRamp * (d / cfg.runLength));
-  it('cross the road twice, one ❓ per lane: halfway (Level 1) and 5 s before the finish (Level 2)', () => {
-    const lastRow = CONFIG.runLength - CONFIG.questions.lastRowLead * CONFIG.baseSpeed * (1 + CONFIG.speedRamp);
+  it('cross the road twice, one ❓ per lane: halfway (Level 1) and right before the finish line (Level 2)', () => {
+    const endSpeed = CONFIG.baseSpeed * (1 + CONFIG.speedRamp);
+    const lastRow = CONFIG.runLength - CONFIG.questions.lastRowLead * endSpeed;
+    expect(CONFIG.runLength - lastRow).toBeLessThanOrEqual(endSpeed);
     for (const s of seeds.slice(0, 20)) {
       const q = asks(run(s));
       expect(q).toHaveLength(6);
@@ -115,6 +117,14 @@ describe('question rows', () => {
         }
       }
     }
+  });
+  it('let rewards and obstacles run on into the old finish stretch, up to the last row\'s run-up', () => {
+    const oldEnd = CONFIG.runLength - CONFIG.spawn.finishClear;
+    const lastRow = CONFIG.runLength - CONFIG.questions.lastRowLead * CONFIG.baseSpeed * (1 + CONFIG.speedRamp);
+    const runUp = lastRow - ROW_CLEAR.before * speedAt(CONFIG, lastRow);
+    const latest = seeds.map((s) => Math.max(...run(s).filter((i) => i.type !== 'question').map((i) => i.at)));
+    expect(latest.some((at) => at > oldEnd)).toBe(true);
+    for (const at of latest) expect(at).toBeLessThan(runUp);
   });
   it('still place exactly the asked counts in fixed mode', () => {
     const cfg = withSpawn({ mode: 'fixed', obstacles: 11, treats: 31 });

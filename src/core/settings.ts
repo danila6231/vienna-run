@@ -22,7 +22,7 @@ export interface Settings {
   points: Record<ItemType, number>;
   tiers: Tier[];
   showGifts: boolean;
-  /** Two ❓ rows per round: a Level 1 question halfway, a Level 2 question 5 s before the finish. */
+  /** Two ❓ rows per round: a Level 1 question halfway, a Level 2 question right before the finish line. */
   questions: { enabled: boolean; level1Points: number; level2Points: number; timeLimit: number };
   leaderboard: { enabled: boolean; board: string };
   /** Per device, like the PIN and the board: it depends on what this PC's graphics can do. */

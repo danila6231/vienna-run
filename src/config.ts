@@ -23,10 +23,11 @@ export interface GameConfig {
   trayMax: number;
   stumbleSeconds: number;
   questions: {
-    /** Two rows of ❓ across all three lanes: halfway (a Level 1 question) and `lastRowLead` seconds before the finish (Level 2). */
+    /** Two rows of ❓ across all three lanes: halfway (a Level 1 question) and right before the finish line (Level 2). */
     enabled: boolean;
     /** Points for a right answer, by level; a wrong answer or no answer gives 0. */
     points: Record<QuestionLevel, number>;
+    /** Seconds before the finish line that the last row stands, at finishing speed. */
     lastRowLead: number;
     timeLimit: number;
     recentRuns: number;
@@ -70,7 +71,7 @@ export const CONFIG: GameConfig = {
   questions: {
     enabled: true,
     points: { 1: 15, 2: 20 },
-    lastRowLead: 5,
+    lastRowLead: 0.5,
     timeLimit: 10,
     // With five questions per level, avoiding the last two players' questions still leaves three to pick from.
     recentRuns: 2,
