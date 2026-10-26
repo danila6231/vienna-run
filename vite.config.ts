@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
             injectRegister: false,
             manifest: false,
             workbox: {
-              globPatterns: ['**/*.{js,css,html,png,webp,svg,woff,woff2}'],
+              globPatterns: ['**/*.{js,css,html,png,webp,svg,woff,woff2,m4a}'],
               maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
               cleanupOutdatedCaches: true,
             },

@@ -28,6 +28,8 @@ Do these on the booth PC on setup day, in order.
     if it is hidden, hold the top-left corner for 3 s and enter the team PIN, default 2468). The defaults are already the
     booth's tuned round; to use a different one, load it with **Share code →
     Load code** (paste the code from the team chat), check the values, press **Save**.
+    **Sound:** the Habanera plays from the start screen. Set the Windows volume so it sits under the room's noise;
+    to silence this booth, settings → Sound → **Off**, Save.
 11. **Leaderboard:** to try it without leaving a test name on the real board, set settings → Leaderboard →
     board name to **test**, Save, finish one round, save a name, and check it shows on the start screen.
     Then set the board name back to **booth** and Save. (Team laptops keep **test**.)

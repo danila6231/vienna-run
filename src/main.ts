@@ -9,10 +9,12 @@ import { Game } from './app/game';
 import { installKiosk } from './app/kiosk';
 import { FixedStepper, startLoop, type Loop } from './app/loop';
 import { parseParams } from './app/params';
+import { startMusic } from './app/music';
 import { loadSettings, saveSettings } from './app/settingsStore';
 import { readJson, safeLocalStorage, writeJson } from './app/storage';
 import { applyUpdateIfReady, setupUpdates } from './app/updates';
 import { installWatchdog, shouldRefresh } from './app/watchdog';
+import habaneraUrl from './assets/audio/habanera.m4a?url';
 import { loadArt } from './assets/manifest';
 import { CONFIG } from './config';
 import { validateBank } from './core/questions';
@@ -100,6 +102,9 @@ async function boot(): Promise<void> {
     return;
   }
 
+  // Background music on a loop (not on the self-check screen); staff can mute it per device.
+  const music = startMusic(new Audio(habaneraUrl), settings.sound, document);
+
   // Leaderboard: kept on this device first; uploaded to Supabase when the hosted build has its details.
   // Autoplay (bot) rounds never touch it beyond the device, and the USB copy has no details at all.
   const remoteCfg = params.autoplay ? null : remoteConfigFrom(import.meta.env);
@@ -173,6 +178,7 @@ async function boot(): Promise<void> {
       scores.setBoard(s.leaderboard.board);
       pushBoard();
       game.configure(buildConfig(s), featuresOf(s));
+      music.setEnabled(s.sound);
       if (restart) location.reload();
     },
     onClose: () => {

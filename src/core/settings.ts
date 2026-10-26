@@ -26,6 +26,8 @@ export interface Settings {
   leaderboard: { enabled: boolean; board: string };
   /** Per device, like the PIN and the board: it depends on what this PC's graphics can do. */
   street: StreetLook;
+  /** Per device too: the background music on or off, depending on where this booth stands. */
+  sound: boolean;
   /** 4 digits, stored as is: a 4-digit PIN has only 10,000 values, so hashing would add nothing. */
   pin: string;
 }
@@ -82,6 +84,7 @@ export function defaultSettings(): Settings {
     questions: { enabled: false, perRun: CONFIG.questions.perRun, timeLimit: CONFIG.questions.timeLimit },
     leaderboard: { enabled: true, board: 'booth' },
     street: '3d',
+    sound: true,
     pin: '2468',
   };
 }
@@ -162,6 +165,7 @@ export function sanitize(raw: unknown): Settings {
       board: typeof lb.board === 'string' && BOARD_RE.test(lb.board) ? lb.board : d.leaderboard.board,
     },
     street: r.street === '3d' || r.street === 'paper' ? r.street : d.street,
+    sound: typeof r.sound === 'boolean' ? r.sound : d.sound,
     pin: typeof r.pin === 'string' && PIN_RE.test(r.pin) ? r.pin : d.pin,
   };
   s.preset = detectPreset(s);
@@ -248,23 +252,24 @@ function fromBase64Url(code: string): string {
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 }
 
-/** A copy/paste code with every setting except the per-device ones: the PIN, the leaderboard and the street look. */
+/** A copy/paste code with every setting except the per-device ones: the PIN, the leaderboard, the street look and the sound switch. */
 export function toShareCode(s: Settings): string {
   const copy: Partial<Settings> = { ...s };
   delete copy.pin;
   delete copy.leaderboard;
   delete copy.street;
+  delete copy.sound;
   return SHARE_PREFIX + toBase64Url(JSON.stringify(copy));
 }
 
-/** Settings from a share code (keeping this device's PIN, leaderboard and street look), or null if the code is not valid. */
+/** Settings from a share code (keeping this device's PIN, leaderboard, street look and sound switch), or null if the code is not valid. */
 export function fromShareCode(code: string, current: Settings): Settings | null {
   const c = code.trim();
   if (!c.startsWith(SHARE_PREFIX)) return null;
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(c.slice(SHARE_PREFIX.length)));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    return sanitize({ ...(parsed as object), pin: current.pin, leaderboard: { ...current.leaderboard }, street: current.street });
+    return sanitize({ ...(parsed as object), pin: current.pin, leaderboard: { ...current.leaderboard }, street: current.street, sound: current.sound });
   } catch {
     return null;
   }

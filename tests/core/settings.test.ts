@@ -87,6 +87,11 @@ describe('sanitize', () => {
   it('re-detects the preset instead of trusting the stored label', () => {
     expect(sanitize({ ...applyPreset(defaultSettings(), 'normal'), preset: 'hard' }).preset).toBe('normal');
   });
+  it('keeps sound on unless it was switched off', () => {
+    expect(defaultSettings().sound).toBe(true);
+    expect(sanitize({ ...defaultSettings(), sound: false }).sound).toBe(false);
+    expect(sanitize({ ...defaultSettings(), sound: 'off' }).sound).toBe(true);
+  });
   it('keeps a known street look and falls back to 3D for anything else', () => {
     expect(sanitize({ ...defaultSettings(), street: 'paper' }).street).toBe('paper');
     expect(sanitize({ ...defaultSettings(), street: 'vr' }).street).toBe('3d');
@@ -120,6 +125,12 @@ describe('share codes', () => {
     expect(code).not.toContain('9999');
     const loaded = fromShareCode(code, defaultSettings());
     expect(loaded).toEqual({ ...tuned, preset: 'custom', pin: '2468' });
+  });
+  it("never mute or unmute a device from another device's code", () => {
+    const quiet = { ...defaultSettings(), sound: false };
+    expect(toShareCode(quiet)).not.toContain('sound');
+    expect(fromShareCode(toShareCode(quiet), defaultSettings())?.sound).toBe(true);
+    expect(fromShareCode(toShareCode(defaultSettings()), quiet)?.sound).toBe(false);
   });
   it("never move a device to another device's street look", () => {
     const booth = { ...defaultSettings(), street: 'paper' as const };

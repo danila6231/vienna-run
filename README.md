@@ -33,13 +33,21 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   for a different street.
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Bonus questions:** on/off, how many per round, seconds to answer.
+- **Sound:** the background music on or off. Per device.
 - **Graphics:** the street in **3D** (default) or **Paper (lighter)**, the flat cutout houses and landmarks, as a
   fallback for a PC that can't keep 50 fps. Per device; saving a change restarts the game.
-- **Share code:** copy every setting except the PIN, the leaderboard board and the street look to another device.
+- **Share code:** copy every setting except the PIN, the leaderboard board, the street look and the sound switch to
+  another device.
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
 defaults (also what **Reset to defaults** restores) are the booth's tuned round: 45 s at 90→110 km/h,
 "Same for everyone" with 40 obstacles and 75 rewards, Krampus −20, bomb −25, bonus questions off.
+
+## Music
+The Habanera from Bizet's *Carmen* (instrumental, London Festival Orchestra; supplied by the booth team) loops
+quietly in the background: `src/assets/audio/habanera.m4a`. Browsers only allow sound after the first tap, so on a
+normal browser it starts with the first round; the kiosk launchers allow it from the start screen. Staff mute it in
+settings → Sound.
 
 ## Languages
 The game starts in **Vietnamese**. The **VI | EN** pill on the start screen switches to English for one

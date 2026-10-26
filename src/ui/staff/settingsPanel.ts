@@ -115,6 +115,18 @@ const questions: Section = {
   },
 };
 
+const sound: Section = {
+  title: 'Sound',
+  render({ draft: d, edit }) {
+    const box = el('div');
+    box.append(
+      toggle('Sound', d.sound, (v) => edit((x) => { x.sound = v; })),
+      note('Background music: the Habanera from Carmen, on a loop. Off mutes the game. This device only.'),
+    );
+    return box;
+  },
+};
+
 const graphics: Section = {
   title: 'Graphics',
   render({ draft: d, edit }) {
@@ -176,7 +188,7 @@ const share: Section = {
       ctx.notice('Code loaded. Check the values, then press Save.');
     });
     const box = el('div');
-    box.append(note('Moves these settings to another device: everything except the PIN, the leaderboard board and the street look, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
+    box.append(note('Moves these settings to another device: everything except the PIN, the leaderboard board, the street look and the sound switch, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
     return box;
   },
 };
@@ -197,7 +209,7 @@ export class SettingsPanel {
   private idleTimer = 0;
 
   constructor(parent: HTMLElement, private readonly o: PanelOptions) {
-    this.sections = [difficulty, pointsAndGifts, questions, graphics, ...(o.sections ?? []), pin, share];
+    this.sections = [difficulty, pointsAndGifts, questions, sound, graphics, ...(o.sections ?? []), pin, share];
     const panel = this;
     this.ctx = {
       get draft() {
@@ -219,8 +231,8 @@ export class SettingsPanel {
     const actions = el('div', 'st-actions');
     actions.append(
       button('Reset to defaults', () => {
-        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard }, street: x.street }), true);
-        this.ctx.notice('Defaults restored (PIN, board name and street look kept). Press Save to keep them.');
+        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard }, street: x.street, sound: x.sound }), true);
+        this.ctx.notice('Defaults restored (PIN, board name, street look and sound switch kept). Press Save to keep them.');
       }),
       button('Cancel', () => this.close()),
       this.saveButton,
