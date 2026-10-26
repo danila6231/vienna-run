@@ -24,7 +24,6 @@ export function simulateRun(seed: number, skill: BotSkill, cfg: GameConfig = CON
       else if (e.kind === 'collect') collected++;
       else if (e.kind === 'question') {
         questions++;
-        collected++;
         run.answer(bot.answer());
       }
     }

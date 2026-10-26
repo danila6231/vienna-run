@@ -37,9 +37,10 @@ export class QuestionScreen {
     parent.append(this.root);
   }
 
-  show(q: Question, basePoints: number, onPick: (index: number) => void): void {
+  /** `n` of `total`: which ❓ row this is; `points` for a right answer. */
+  show(q: Question, info: { n: number; total: number; points: number }, onPick: (index: number) => void): void {
     const text = q[this.i18n.lang];
-    this.title.textContent = this.i18n.t('question.bonus', { base: basePoints, double: basePoints * 2 });
+    this.title.textContent = this.i18n.t('question.title', info);
     this.text.textContent = text.q;
     text.options.forEach((o, i) => {
       const b = this.buttons[i];

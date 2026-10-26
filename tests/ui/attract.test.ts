@@ -4,7 +4,7 @@ import { CONFIG } from '../../src/config';
 import { I18n } from '../../src/i18n/i18n';
 import { AttractScreen } from '../../src/ui/attract';
 
-const icons = { piano: 'a.png', violin: 'b.png', sheet: 'c.png', notes: 'd.png', krampus: 'e.png', bomb: 'f.png' };
+const icons = { piano: 'a.png', violin: 'b.png', sheet: 'c.png', notes: 'd.png', question: 'q.png', krampus: 'e.png', bomb: 'f.png' };
 const noGifts = { showGifts: false, leaderboard: false };
 
 describe('AttractScreen', () => {
@@ -17,13 +17,16 @@ describe('AttractScreen', () => {
     expect(text).toContain('Race the musician');
     expect(text).toContain('+15');
     expect(text).toContain('−20');
-    expect(s.root.querySelectorAll('.legend img')).toHaveLength(6);
+    expect(text).toContain('Question+15 / +20');
+    expect(s.root.querySelectorAll('.legend img')).toHaveLength(7);
   });
   it('shows the points from the current settings', () => {
     const s = new AttractScreen(document.body, new I18n('en'), icons, null);
     s.configure(CONFIG, noGifts);
     s.configure({ ...CONFIG, items: { ...CONFIG.items, piano: { points: 25, good: true } } }, noGifts);
     expect(s.root.textContent).toContain('+25');
+    expect(s.root.querySelectorAll('.legend li')).toHaveLength(7);
+    s.configure({ ...CONFIG, questions: { ...CONFIG.questions, enabled: false } }, noGifts);
     expect(s.root.querySelectorAll('.legend li')).toHaveLength(6);
   });
   it('does not mention gifts while they are switched off', () => {

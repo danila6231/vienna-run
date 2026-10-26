@@ -1,31 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { CONFIG } from '../../src/config';
-import { pickQuestions, scheduleSlots, shuffleOptions, updateRecent, validateBank } from '../../src/core/questions';
+import { pickQuestions, shuffleOptions, updateRecent, validateBank } from '../../src/core/questions';
 import { createRng } from '../../src/core/rng';
 import bankJson from '../../src/data/questions.json';
 
 const bank = validateBank(bankJson);
 
-describe('scheduleSlots', () => {
-  it.each([3, 4])('places exactly %i slots inside the window with the minimum gap', (perRun) => {
-    const q = { ...CONFIG.questions, perRun };
-    for (let s = 1; s <= 500; s++) {
-      const slots = scheduleSlots(createRng(s), q);
-      expect(slots).toHaveLength(perRun);
-      expect(slots[0]).toBeGreaterThanOrEqual(q.windowStart);
-      expect(slots[slots.length - 1]).toBeLessThanOrEqual(q.windowEnd);
-      for (let i = 1; i < slots.length; i++) expect(slots[i] - slots[i - 1]).toBeGreaterThanOrEqual(q.minGap - 1e-9);
-    }
-  });
-  it('refuses a window too small for the slots', () => {
-    expect(() => scheduleSlots(createRng(1), { ...CONFIG.questions, perRun: 6, windowStart: 4, windowEnd: 20 })).toThrow(/window/);
-  });
-});
-
 describe('pickQuestions', () => {
   it('picks distinct questions', () => {
     const picked = pickQuestions(createRng(4), bank, 3, []);
     expect(new Set(picked.map((q) => q.id)).size).toBe(3);
+  });
+  it('picks a different question as the seed changes, so every player gets a random one', () => {
+    const level1 = bank.filter((q) => q.level === 1);
+    const seen = new Set(Array.from({ length: 40 }, (_, s) => pickQuestions(createRng(s + 1), level1, 1, [])[0].id));
+    expect(seen.size).toBe(level1.length);
   });
   it('skips recently used questions when enough remain', () => {
     const recent = bank.slice(0, bank.length - 3).map((q) => q.id);
@@ -56,8 +44,9 @@ describe('updateRecent', () => {
 });
 
 describe('question bank', () => {
-  it('has at least 30 valid questions, each in Vietnamese and English', () => {
-    expect(bank.length).toBeGreaterThanOrEqual(30);
+  it('has five Level 1 and five Level 2 questions, each in Vietnamese and English', () => {
+    expect(bank.filter((q) => q.level === 1)).toHaveLength(5);
+    expect(bank.filter((q) => q.level === 2)).toHaveLength(5);
     expect(new Set(bank.map((q) => q.id)).size).toBe(bank.length);
     for (const q of bank) {
       expect(q.vi.q).not.toBe(q.en.q);
@@ -65,12 +54,14 @@ describe('question bank', () => {
     }
   });
   it('rejects malformed entries with a readable message', () => {
-    const good = { id: 'x', answer: 0, en: { q: 'Q?', options: ['a', 'b', 'c'] }, vi: { q: 'H?', options: ['a', 'b', 'c'] } };
+    const good = { id: 'x', level: 1, answer: 0, en: { q: 'Q?', options: ['a', 'b', 'c'] }, vi: { q: 'H?', options: ['a', 'b', 'c'] } };
     expect(validateBank([good])).toHaveLength(1);
     expect(() => validateBank([{ ...good, vi: { q: 'H?', options: ['a', 'a', 'b'] } }])).toThrow(/x \(vi\): options must differ/);
     expect(() => validateBank([{ ...good, en: { q: 'Q?', options: ['a', 'b'] } }])).toThrow(/x \(en\): needs exactly 3 options/);
     expect(() => validateBank([{ ...good, en: { q: ' ', options: ['a', 'b', 'c'] } }])).toThrow(/x \(en\): empty text/);
-    expect(() => validateBank([{ id: 'y', answer: 0, en: good.en }])).toThrow(/y \(vi\)/);
+    expect(() => validateBank([{ id: 'y', level: 2, answer: 0, en: good.en }])).toThrow(/y \(vi\)/);
     expect(() => validateBank([{ ...good, answer: 3 }])).toThrow(/answer must be 0, 1 or 2/);
+    expect(() => validateBank([{ ...good, level: 3 }])).toThrow(/x: level must be 1 or 2/);
+    expect(() => validateBank([{ id: 'y', answer: 0, en: good.en, vi: good.vi }])).toThrow(/y: level must be 1 or 2/);
   });
 });

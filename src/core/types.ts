@@ -1,7 +1,12 @@
 export type Lane = -1 | 0 | 1;
 export type GoodType = 'piano' | 'violin' | 'sheet' | 'notes';
 export type BadType = 'krampus' | 'bomb';
+/** Items with points of their own: the rewards and the obstacles. */
 export type ItemType = GoodType | BadType;
+/** Everything that lies on the road: the items, and the ❓ that open a question. */
+export type RoadType = ItemType | 'question';
+/** Level 1 questions are easy and come halfway; Level 2 questions come just before the finish. */
+export type QuestionLevel = 1 | 2;
 
 export const GOOD_TYPES: readonly GoodType[] = ['piano', 'violin', 'sheet', 'notes'];
 export const BAD_TYPES: readonly BadType[] = ['krampus', 'bomb'];
@@ -14,12 +19,12 @@ export interface Item {
   /** Distance along the route, in metres. */
   at: number;
   lane: Lane;
-  type: ItemType;
+  type: RoadType;
   state: ItemState;
   /** Seconds since the item was taken or hit (drives its exit animation). */
   t: number;
-  /** True when collecting this item opened a bonus question. */
-  question: boolean;
+  /** For a ❓: which question row it belongs to. */
+  level?: QuestionLevel;
 }
 
 export type RunEvent =
@@ -37,6 +42,7 @@ export interface QuestionText {
 /** A bonus question in both languages; `answer` indexes the options of either language. */
 export interface Question {
   id: string;
+  level: QuestionLevel;
   answer: 0 | 1 | 2;
   vi: QuestionText;
   en: QuestionText;

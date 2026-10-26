@@ -28,6 +28,8 @@ Do these on the booth PC on setup day, in order.
     if it is hidden, hold the top-left corner for 3 s and enter the team PIN, default 2468). The defaults are already the
     booth's tuned round; to use a different one, load it with **Share code →
     Load code** (paste the code from the team chat), check the values, press **Save**.
+    **Questions** are on by default; if this booth saved settings earlier with them off, set settings → Questions →
+    **On** and Save.
     **Sound:** the Habanera plays from the start screen. Set the Windows volume so it sits under the room's noise;
     to silence this booth, settings → Sound → **Off**, Save.
 11. **Leaderboard:** to try it without leaving a test name on the real board, set settings → Leaderboard →
@@ -38,7 +40,7 @@ Do these on the booth PC on setup day, in order.
     - play with **both hands** (left hand taps left, right hand taps right, overlapping);
     - a **slow swipe** across the screen (it should move the way you swiped);
     - **rest a palm** on the screen edge, then keep tapping with the other hand (taps must still work);
-    - keep **tapping right as a bonus question appears** (the first moment's taps must not pick an answer);
+    - keep **tapping right as a question appears** (the first moment's taps must not pick an answer);
     - a **quick tap** on "Hold for next player" (it must not skip the results).
 13. Optional: Startup folder (`Win+R` → `shell:startup`), drop a shortcut to the launcher there,
     so the game comes back by itself after a restart.

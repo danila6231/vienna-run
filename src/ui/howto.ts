@@ -1,3 +1,4 @@
+import type { QuestionLevel } from '../core/types';
 import type { I18n } from '../i18n/i18n';
 import { el } from './dom';
 
@@ -9,6 +10,7 @@ export class HowtoScreen {
   private lanes = el('li');
   private items = el('li');
   private bonus = el('li');
+  private points: Record<QuestionLevel, number> | null = null;
 
   constructor(parent: HTMLElement, private readonly i18n: I18n) {
     const steps = el('ol');
@@ -21,9 +23,11 @@ export class HowtoScreen {
     i18n.onChange(() => this.relabel());
   }
 
-  /** The rules card; the bonus-question line only shows when questions are switched on. */
-  showHowto(questionsOn: boolean): void {
-    this.bonus.hidden = !questionsOn;
+  /** The rules card; the ❓ line, with each level's points, only shows when questions are switched on. */
+  showHowto(questionPoints: Record<QuestionLevel, number> | null): void {
+    this.points = questionPoints;
+    this.relabel();
+    this.bonus.hidden = !questionPoints;
     this.root.hidden = false;
     this.card.hidden = false;
     this.count.hidden = true;
@@ -51,6 +55,6 @@ export class HowtoScreen {
     this.title.textContent = this.i18n.t('howto.title');
     this.lanes.textContent = this.i18n.t('howto.lanes');
     this.items.textContent = this.i18n.t('howto.items');
-    this.bonus.textContent = this.i18n.t('howto.bonus');
+    this.bonus.textContent = this.points ? this.i18n.t('howto.bonus', { l1: this.points[1], l2: this.points[2] }) : '';
   }
 }

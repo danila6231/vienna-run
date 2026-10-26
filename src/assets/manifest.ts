@@ -37,7 +37,7 @@ const finishFor = (id: string): Finish => FINISHES.find(([prefix]) => id.startsW
 /** HTML-only files: never drawn into the 3D scene. */
 const isUiOnly = (id: string) => id.startsWith('gift-') || id === 'logo';
 
-const EMOJI: Record<string, string> = { piano: '🎹', violin: '🎻', sheet: '🎼', notes: '🎶', krampus: '👹', bomb: '💣' };
+const EMOJI: Record<string, string> = { piano: '🎹', violin: '🎻', sheet: '🎼', notes: '🎶', question: '❓', krampus: '👹', bomb: '💣' };
 const numbered = (prefix: string, count: number, paint: (i: number) => HTMLCanvasElement): Array<[string, Painter]> =>
   Array.from({ length: count }, (_, i) => [`${prefix}${String(i + 1).padStart(2, '0')}`, () => paint(i)]);
 

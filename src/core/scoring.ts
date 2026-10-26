@@ -5,9 +5,9 @@ export function applyPoints(score: number, delta: number): number {
   return Math.max(0, score + delta);
 }
 
-/** A bonus-question treat is worth double when answered right and nothing otherwise. */
-export function questionPoints(base: number, correct: boolean): number {
-  return correct ? base * 2 : 0;
+/** A question gives its level's points when answered right and nothing otherwise. */
+export function questionPoints(points: number, correct: boolean): number {
+  return correct ? points : 0;
 }
 
 /** Index of the highest tier whose minimum the score reaches. */

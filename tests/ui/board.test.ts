@@ -7,7 +7,7 @@ import { AttractScreen } from '../../src/ui/attract';
 import { boardList } from '../../src/ui/board';
 import { BoardModal, type BoardSource } from '../../src/ui/boardModal';
 
-const icons = { piano: 'a', violin: 'b', sheet: 'c', notes: 'd', krampus: 'e', bomb: 'f' };
+const icons = { piano: 'a', violin: 'b', sheet: 'c', notes: 'd', question: 'q', krampus: 'e', bomb: 'f' };
 const rows: BoardRow[] = [
   { id: 'a', at: '2026-10-03T08:00:00Z', name: 'Anna', score: 150 },
   { id: 'b', at: '2026-10-03T09:00:00Z', name: '<b>Bo</b>', score: 90 },

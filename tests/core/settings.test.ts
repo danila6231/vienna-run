@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../src/config';
-import { scheduleSlots } from '../../src/core/questions';
 import { createRng } from '../../src/core/rng';
 import { Run } from '../../src/core/run';
 import {
-  applyPreset, buildConfig, defaultSettings, detectPreset, featuresOf, fromShareCode, minRoundSeconds, sanitize, toShareCode, validate, warnings,
+  applyPreset, buildConfig, defaultSettings, detectPreset, featuresOf, fromShareCode, sanitize, toShareCode, validate, warnings,
 } from '../../src/core/settings';
+import { generateItems } from '../../src/core/spawner';
 
 describe('defaults', () => {
   it("are the booth's tuned round", () => {
@@ -14,15 +14,15 @@ describe('defaults', () => {
     expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(110 / 3.6);
     expect(cfg.runLength).toBe(1250);
     expect(cfg.spawn).toMatchObject({ obstacles: 40, treats: 75, mode: 'fixed' });
-    expect(cfg.questions).toMatchObject({ perRun: 0, timeLimit: 10 });
+    expect(cfg.questions).toMatchObject({ enabled: true, points: { 1: 15, 2: 20 }, timeLimit: 10 });
     for (const [k, v] of Object.entries(CONFIG.items)) expect(cfg.items[k as keyof typeof CONFIG.items].points).toBe(v.points);
     expect(warnings(defaultSettings())).toEqual([]);
   });
-  it('start Custom with gifts and questions off, leaderboard on, PIN 2468, board "booth"', () => {
+  it('start Custom with gifts off, questions and leaderboard on, PIN 2468, board "booth"', () => {
     const s = defaultSettings();
     expect(s.preset).toBe('custom');
     expect(featuresOf(s)).toEqual({ showGifts: false, leaderboard: true });
-    expect(s.questions.enabled).toBe(false);
+    expect(s.questions).toEqual({ enabled: true, level1Points: 15, level2Points: 20, timeLimit: 10 });
     expect(s.pin).toBe('2468');
     expect(s.leaderboard.board).toBe('booth');
     expect(s.street).toBe('3d');
@@ -41,27 +41,31 @@ describe('presets', () => {
 });
 
 describe('buildConfig', () => {
-  it('switches questions off completely', () => {
-    const cfg = buildConfig({ ...defaultSettings(), questions: { enabled: false, perRun: 3, timeLimit: 10 } });
-    expect(cfg.questions.perRun).toBe(0);
-    expect(scheduleSlots(createRng(1), cfg.questions)).toEqual([]);
+  it('switches questions off completely: no ❓ rows on the road', () => {
+    const cfg = buildConfig({ ...defaultSettings(), questions: { ...defaultSettings().questions, enabled: false } });
+    expect(cfg.questions.enabled).toBe(false);
+    expect(generateItems(createRng(1), cfg).filter((i) => i.type === 'question')).toEqual([]);
   });
-  it('scales the run length and question window with the round length', () => {
+  it('passes the points for each question level', () => {
+    const cfg = buildConfig({ ...defaultSettings(), questions: { ...defaultSettings().questions, level1Points: 12, level2Points: 30 } });
+    expect(cfg.questions.points).toEqual({ 1: 12, 2: 30 });
+  });
+  it('scales the run length with the round length', () => {
     const cfg = buildConfig({ ...defaultSettings(), roundSeconds: 60 });
     expect(cfg.runLength).toBeGreaterThan(900);
-    expect(cfg.questions.windowEnd).toBe(52);
   });
-  it('never builds a round that crashes, even from settings that failed validation', () => {
-    const s = { ...defaultSettings(), roundSeconds: 20, questions: { enabled: true, perRun: 5, timeLimit: 10 } };
-    expect(validate(s).length).toBeGreaterThan(0);
-    expect(() => new Run({ seed: 1, config: buildConfig(s) })).not.toThrow();
+  it('builds a round with both ❓ rows even at the shortest, slowest settings', () => {
+    const s = { ...defaultSettings(), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 };
+    expect(validate(s)).toEqual([]);
+    const run = new Run({ seed: 1, config: buildConfig(s) });
+    const rows = [...new Set(run.items.filter((i) => i.type === 'question').map((i) => i.at))];
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toBeGreaterThan(buildConfig(s).spawn.firstAt);
   });
 });
 
 describe('validate', () => {
-  it('explains when the round is too short for the questions', () => {
-    const s = { ...defaultSettings(), roundSeconds: 20, questions: { enabled: true, perRun: 5, timeLimit: 10 } };
-    expect(validate(s)).toContain(`5 questions need a round of at least ${minRoundSeconds(5)} s.`);
+  it('accepts the defaults', () => {
     expect(validate(defaultSettings())).toEqual([]);
   });
   it('rejects a bad PIN, board name or gift ladder', () => {
@@ -86,6 +90,10 @@ describe('sanitize', () => {
   });
   it('re-detects the preset instead of trusting the stored label', () => {
     expect(sanitize({ ...applyPreset(defaultSettings(), 'normal'), preset: 'hard' }).preset).toBe('normal');
+  });
+  it('keeps question points in range and drops the old questions-per-round setting', () => {
+    const s = sanitize({ ...defaultSettings(), questions: { enabled: false, perRun: 3, level1Points: 500, level2Points: 'x', timeLimit: 10 } });
+    expect(s.questions).toEqual({ enabled: false, level1Points: 100, level2Points: 20, timeLimit: 10 });
   });
   it('keeps sound on unless it was switched off', () => {
     expect(defaultSettings().sound).toBe(true);

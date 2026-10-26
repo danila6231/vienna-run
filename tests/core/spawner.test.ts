@@ -2,14 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG, type GameConfig } from '../../src/config';
 import { createRng } from '../../src/core/rng';
 import { buildConfig, defaultSettings } from '../../src/core/settings';
-import { generateItems, layoutSeed } from '../../src/core/spawner';
-import type { Item } from '../../src/core/types';
+import { generateItems, layoutSeed, ROW_CLEAR } from '../../src/core/spawner';
+import { isGood, type Item } from '../../src/core/types';
 
 const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
 const withSpawn = (spawn: Partial<GameConfig['spawn']>, extra: Partial<GameConfig> = {}): GameConfig => ({ ...CONFIG, ...extra, spawn: { ...CONFIG.spawn, ...spawn } });
 const run = (seed: number, cfg: GameConfig = CONFIG) => generateItems(createRng(seed), cfg);
-const good = (items: Item[]) => items.filter((i) => CONFIG.items[i.type].good);
-const bad = (items: Item[]) => items.filter((i) => !CONFIG.items[i.type].good);
+const good = (items: Item[]) => items.filter((i) => i.type !== 'question' && isGood(i.type));
+const bad = (items: Item[]) => items.filter((i) => i.type !== 'question' && !isGood(i.type));
+const asks = (items: Item[]) => items.filter((i) => i.type === 'question');
+const noQuestions = (cfg: GameConfig): GameConfig => ({ ...cfg, questions: { ...cfg.questions, enabled: false } });
 /** Obstacles grouped by position: each group is one obstacle pattern. */
 const obstacleGroups = (items: Item[]) => {
   const groups: Item[][] = [];
@@ -84,8 +86,46 @@ describe('generateItems', () => {
       for (let i = 1; i < groups.length; i++) expect(groups[i][0].at - groups[i - 1][0].at).toBeGreaterThan(9);
     }
   });
-  it('places enough treats for every question slot', () => {
-    for (const s of seeds) expect(good(run(s)).length).toBeGreaterThanOrEqual(14);
+});
+
+describe('question rows', () => {
+  const speedAt = (cfg: GameConfig, d: number) => cfg.baseSpeed * (1 + cfg.speedRamp * (d / cfg.runLength));
+  it('cross the road twice, one ❓ per lane: halfway (Level 1) and 5 s before the finish (Level 2)', () => {
+    const lastRow = CONFIG.runLength - CONFIG.questions.lastRowLead * CONFIG.baseSpeed * (1 + CONFIG.speedRamp);
+    for (const s of seeds.slice(0, 20)) {
+      const q = asks(run(s));
+      expect(q).toHaveLength(6);
+      for (const [level, at] of [[1, CONFIG.runLength / 2], [2, lastRow]] as const) {
+        const row = q.filter((i) => i.level === level);
+        expect(row.map((i) => i.lane).sort()).toEqual([-1, 0, 1]);
+        for (const i of row) expect(i.at).toBeCloseTo(at, 6);
+      }
+    }
+  });
+  it.each([['default', CONFIG], ['crowded', withSpawn({ mode: 'fixed', obstacles: 40, treats: 80 })]])('keep obstacles and rewards clear of both rows (%s)', (_name, cfg) => {
+    for (const s of seeds.slice(0, 50)) {
+      const items = run(s, cfg);
+      const rows = [...new Set(asks(items).map((i) => i.at))];
+      for (const it of items) {
+        if (it.type === 'question') continue;
+        for (const r of rows) {
+          const v = speedAt(cfg, r);
+          if (it.at < r) expect(r - it.at).toBeGreaterThanOrEqual(ROW_CLEAR.before * v - 1e-6);
+          else expect(it.at - r).toBeGreaterThanOrEqual(ROW_CLEAR.after * v - 1e-6);
+        }
+      }
+    }
+  });
+  it('still place exactly the asked counts in fixed mode', () => {
+    const cfg = withSpawn({ mode: 'fixed', obstacles: 11, treats: 31 });
+    for (const s of seeds.slice(0, 50)) {
+      const items = run(s, cfg);
+      expect(bad(items)).toHaveLength(11);
+      expect(good(items)).toHaveLength(31);
+    }
+  });
+  it('are left out when questions are off', () => {
+    for (const s of seeds.slice(0, 20)) expect(asks(run(s, noQuestions(CONFIG)))).toEqual([]);
   });
 });
 

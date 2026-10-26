@@ -10,7 +10,7 @@ export interface BotSkill {
   reaction: [number, number];
   /** Chance of hesitating when it wants to switch lanes. */
   mistakeRate: number;
-  /** Chance of answering a bonus question right. */
+  /** Chance of answering a question right. */
   answerAccuracy: number;
 }
 
@@ -21,7 +21,7 @@ export const BOT_SKILLS: Record<'casual' | 'average' | 'skilled', BotSkill> = {
   skilled: { name: 'skilled', lookahead: 22, reaction: [0.14, 0.24], mistakeRate: 0.04, answerAccuracy: 0.85 },
 };
 
-/** Plays a run like a person would: drifts toward treats, away from obstacles. */
+/** Plays a run like a person would: drifts toward rewards, away from obstacles. */
 export class Bot {
   private cool = 0;
 
@@ -39,6 +39,7 @@ export class Bot {
       const r = it.at - run.dist;
       if (r < -behind) continue;
       if (r > this.skill.lookahead) break;
+      if (it.type === 'question') continue; // a ❓ row spans every lane: nothing to steer for
       const p = run.cfg.items[it.type].points;
       if (p < 0) {
         if (r < ahead + 4) blocked[it.lane + 1] = true;

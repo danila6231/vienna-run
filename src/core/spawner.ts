@@ -1,16 +1,28 @@
 import type { GameConfig } from '../config';
 import { pick, randRange, shuffle, type Rng } from './rng';
-import { BAD_TYPES, type Item, type ItemType, type Lane } from './types';
+import { BAD_TYPES, type Item, type Lane, type QuestionLevel, type RoadType } from './types';
 
 const LANES: readonly Lane[] = [-1, 0, 1];
 // Cheap rewards appear more often than the piano.
-const GOOD_WEIGHTED: readonly ItemType[] = ['piano', 'violin', 'violin', 'sheet', 'sheet', 'sheet', 'notes', 'notes', 'notes'];
+const GOOD_WEIGHTED: readonly RoadType[] = ['piano', 'violin', 'violin', 'sheet', 'sheet', 'sheet', 'notes', 'notes', 'notes'];
 /** Closest two patterns may sit, in metres, so every obstacle stays readable and dodgeable. */
 export const MIN_PATTERN_SPACING = 14;
+/** Seconds of road kept free of obstacles and rewards before and after each ❓ row. */
+export const ROW_CLEAR = { before: 1.5, after: 2 };
 
 type Pattern = { kind: 'obstacle'; size: 1 | 2; reward: boolean } | { kind: 'line' } | { kind: 'zigzag' } | { kind: 'single' };
 
 const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
+
+/** Where the ❓ rows cross the road: halfway (Level 1) and `lastRowLead` seconds before the finish (Level 2). */
+export function questionRows(cfg: GameConfig): Array<{ at: number; level: QuestionLevel }> {
+  if (!cfg.questions.enabled) return [];
+  const endSpeed = cfg.baseSpeed * (1 + cfg.speedRamp);
+  return [
+    { at: cfg.runLength / 2, level: 1 },
+    { at: cfg.runLength - cfg.questions.lastRowLead * endSpeed, level: 2 },
+  ];
+}
 
 /**
  * Lays out every item for one run, front to back. Same seed, same layout.
@@ -18,12 +30,30 @@ const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
  * so their places match too);
  * 'random' mode first draws this round's counts within ±35% of those targets.
  * Never blocks all three lanes, keeps the start and the finish clear, and thins out crowded settings.
+ * With questions on, two rows of ❓ cross all three lanes, with a little empty road around each.
  */
 export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   const { firstAt, finishClear, mode } = cfg.spawn;
   const lastAt = cfg.runLength - finishClear;
-  const span = lastAt - firstAt;
-  if (span <= 0) return [];
+  const items: Item[] = [];
+  let id = 0;
+  const add = (at: number, lane: Lane, type: RoadType, level?: QuestionLevel) => {
+    items.push({ id: ++id, at, lane, type, state: 'live', t: 0, level });
+  };
+  const rows = questionRows(cfg);
+  for (const r of rows) for (const lane of LANES) add(r.at, lane, 'question', r.level);
+  // The playable stretch minus the empty road around the rows: patterns go into these segments.
+  const speedAt = (d: number) => cfg.baseSpeed * (1 + cfg.speedRamp * (d / cfg.runLength));
+  const segments: Array<readonly [number, number]> = [];
+  let from = firstAt;
+  for (const r of rows) {
+    const gapStart = Math.min(r.at - ROW_CLEAR.before * speedAt(r.at), lastAt);
+    if (gapStart > from) segments.push([from, gapStart]);
+    from = Math.max(from, r.at + ROW_CLEAR.after * speedAt(r.at));
+  }
+  if (lastAt > from) segments.push([from, lastAt]);
+  const span = segments.reduce((n, [a, b]) => n + b - a, 0);
+  if (span <= 0) return items;
   const vary = (n: number) => Math.max(0, mode === 'fixed' ? Math.round(n) : Math.round(n * randRange(rng, 0.65, 1.35)));
   let bad = vary(cfg.spawn.obstacles);
   let good = vary(cfg.spawn.treats);
@@ -60,20 +90,24 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   }
   shuffle(rng, patterns);
 
-  // 4. Spread the patterns evenly along the playable stretch, with a little jitter.
+  // 4. Spread the patterns evenly along the segments, with a little jitter; `u` is metres of segment road.
   const spacing = span / Math.max(1, patterns.length);
   const lineStep = Math.min(4, spacing / 4);
   const zigStep = Math.min(5.5, spacing / 4);
-  const items: Item[] = [];
-  let id = 0;
-  const add = (at: number, lane: Lane, type: ItemType) => {
-    items.push({ id: ++id, at, lane, type, state: 'live', t: 0, question: false });
+  const onRoad = (u: number): { d: number; seg: readonly [number, number] } => {
+    let left = Math.max(0, u);
+    for (const seg of segments) {
+      if (left <= seg[1] - seg[0]) return { d: seg[0] + left, seg };
+      left -= seg[1] - seg[0];
+    }
+    const seg = segments[segments.length - 1];
+    return { d: seg[1], seg };
   };
   let lastFree: Lane | null = null;
   patterns.forEach((p, i) => {
     const extent = p.kind === 'line' ? 2 * lineStep : p.kind === 'zigzag' ? 2 * zigStep : p.kind === 'obstacle' && p.reward ? 2 : 0;
-    const centre = firstAt + spacing * (i + 0.5) + randRange(rng, -0.15, 0.15) * spacing;
-    const at = Math.min(Math.max(centre, firstAt), lastAt - extent - 0.5);
+    const { d, seg } = onRoad(spacing * (i + 0.5) + randRange(rng, -0.15, 0.15) * spacing);
+    const at = Math.min(Math.max(d, seg[0]), seg[1] - extent - 0.5);
     if (p.kind === 'obstacle') {
       // Keep the escape lane within one step of the previous one, so every gap can be reached in time.
       const free: Lane = lastFree === null ? pick(rng, LANES) : clampLane(lastFree + pick(rng, [-1, 0, 1]));
@@ -100,12 +134,12 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
 
 /**
  * The seed for 'fixed' mode: a hash of the staff's layout seed and every setting that shapes a run (route length,
- * item counts and clear stretches, question timing; round length and speeds set these), so every round on every
+ * item counts and clear stretches, the ❓ rows; round length and speeds set these), so every round on every
  * device with the same settings plays the same street. Points and prizes don't move anything, so they leave it alone.
  */
 export function layoutSeed(cfg: GameConfig): number {
   const { runLength, spawn: s, questions: q } = cfg;
-  const key = JSON.stringify([s.seed, runLength, s.firstAt, s.finishClear, s.obstacles, s.treats, q.perRun, q.windowStart, q.windowEnd, q.minGap]);
+  const key = JSON.stringify([s.seed, runLength, s.firstAt, s.finishClear, s.obstacles, s.treats, q.enabled]);
   // FNV-1a
   let h = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193);

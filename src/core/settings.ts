@@ -1,7 +1,7 @@
 import { CONFIG, type GameConfig, type Tier } from '../config';
 import { createRng } from './rng';
 import { generateItems } from './spawner';
-import type { ItemType } from './types';
+import { isGood, type ItemType } from './types';
 
 export type Preset = 'easy' | 'normal' | 'hard' | 'custom';
 export type Mode = 'random' | 'fixed';
@@ -22,7 +22,8 @@ export interface Settings {
   points: Record<ItemType, number>;
   tiers: Tier[];
   showGifts: boolean;
-  questions: { enabled: boolean; perRun: number; timeLimit: number };
+  /** Two ❓ rows per round: a Level 1 question halfway, a Level 2 question 5 s before the finish. */
+  questions: { enabled: boolean; level1Points: number; level2Points: number; timeLimit: number };
   leaderboard: { enabled: boolean; board: string };
   /** Per device, like the PIN and the board: it depends on what this PC's graphics can do. */
   street: StreetLook;
@@ -57,7 +58,7 @@ export const LIMITS = {
   goodPoints: [1, 50],
   badPoints: [-50, -1],
   tierMin: [0, 999],
-  perRun: [1, 5],
+  questionPoints: [1, 100],
   timeLimit: [5, 15],
 } as const;
 
@@ -81,7 +82,7 @@ export function defaultSettings(): Settings {
     points: Object.fromEntries(Object.entries(CONFIG.items).map(([k, v]) => [k, v.points])) as Record<ItemType, number>,
     tiers: CONFIG.tiers.map((t) => ({ ...t })),
     showGifts: false,
-    questions: { enabled: false, perRun: CONFIG.questions.perRun, timeLimit: CONFIG.questions.timeLimit },
+    questions: { enabled: true, level1Points: CONFIG.questions.points[1], level2Points: CONFIG.questions.points[2], timeLimit: CONFIG.questions.timeLimit },
     leaderboard: { enabled: true, board: 'booth' },
     street: '3d',
     sound: true,
@@ -103,11 +104,6 @@ export function detectPreset(s: Settings): Preset {
     if (DIFFICULTY_KEYS.every((k) => s[k] === PRESETS[p][k])) return p;
   }
   return 'custom';
-}
-
-/** Shortest round (seconds) that fits `perRun` question slots at least 4 s apart inside the question window. */
-export function minRoundSeconds(perRun: number): number {
-  return 12 + 4 * Math.max(0, perRun - 1);
 }
 
 const clamp = (v: unknown, range: readonly [number, number], fallback: number): number =>
@@ -157,7 +153,8 @@ export function sanitize(raw: unknown): Settings {
     showGifts: typeof r.showGifts === 'boolean' ? r.showGifts : d.showGifts,
     questions: {
       enabled: typeof q.enabled === 'boolean' ? q.enabled : d.questions.enabled,
-      perRun: clamp(q.perRun, LIMITS.perRun, d.questions.perRun),
+      level1Points: clamp(q.level1Points, LIMITS.questionPoints, d.questions.level1Points),
+      level2Points: clamp(q.level2Points, LIMITS.questionPoints, d.questions.level2Points),
       timeLimit: clamp(q.timeLimit, LIMITS.timeLimit, d.questions.timeLimit),
     },
     leaderboard: {
@@ -175,9 +172,6 @@ export function sanitize(raw: unknown): Settings {
 /** Human-readable reasons the menu must not save these settings (empty = fine). */
 export function validate(s: Settings): string[] {
   const problems: string[] = [];
-  if (s.questions.enabled && s.roundSeconds < minRoundSeconds(s.questions.perRun)) {
-    problems.push(`${s.questions.perRun} questions need a round of at least ${minRoundSeconds(s.questions.perRun)} s.`);
-  }
   if (s.endSpeedKmh < s.startSpeedKmh) problems.push('End speed must be at least the start speed.');
   if (!PIN_RE.test(s.pin)) problems.push('The PIN must be exactly 4 digits.');
   if (!BOARD_RE.test(s.leaderboard.board)) problems.push('Board name: 1–24 lowercase letters, digits or "-".');
@@ -201,7 +195,8 @@ export function warnings(s: Settings): string[] {
   let good = 0;
   for (const seed of FIT_SEEDS) {
     for (const it of generateItems(createRng(seed), exact)) {
-      if (cfg.items[it.type].good) good++;
+      if (it.type === 'question') continue;
+      if (isGood(it.type)) good++;
       else bad++;
     }
   }
@@ -217,12 +212,6 @@ export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig 
   const start = s.startSpeedKmh / 3.6;
   const end = Math.max(start, s.endSpeedKmh / 3.6);
   const runLength = Math.round((s.roundSeconds * (start + end)) / 2);
-  const windowStart = 4;
-  const windowEnd = Math.max(windowStart, s.roundSeconds - 8);
-  let perRun = s.questions.enabled ? s.questions.perRun : 0;
-  const minGap = perRun > 1 ? Math.max(4, Math.min(7, (windowEnd - windowStart) / (perRun - 1))) : 7;
-  // Defensive: never ask scheduleSlots for more slots than fit (it throws), whatever got past validation.
-  while (perRun > 1 && windowEnd - windowStart < (perRun - 1) * minGap) perRun--;
   const items = Object.fromEntries(
     Object.entries(base.items).map(([k, v]) => [k, { ...v, points: s.points[k as ItemType] ?? v.points }]),
   ) as GameConfig['items'];
@@ -233,7 +222,12 @@ export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig 
     runLength,
     items,
     spawn: { firstAt: Math.round(start * 2.4), finishClear: Math.round(end * 2.4), obstacles: s.obstacles, treats: s.treats, mode: s.mode, seed: s.seed },
-    questions: { ...base.questions, perRun, windowStart, windowEnd, minGap, timeLimit: s.questions.timeLimit },
+    questions: {
+      ...base.questions,
+      enabled: s.questions.enabled,
+      points: { 1: s.questions.level1Points, 2: s.questions.level2Points },
+      timeLimit: s.questions.timeLimit,
+    },
     tiers: s.tiers.map((t) => ({ ...t })),
   };
 }

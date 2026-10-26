@@ -79,7 +79,7 @@ describe('Game', () => {
 
   describe('item layout', () => {
     const layout = (game: Game) =>
-      [...game.run.items.map((it) => `${it.at.toFixed(3)}:${it.lane}:${it.type}`), ...game.run.slots.map((s) => `q${s.toFixed(3)}`)].join(' ');
+      game.run.items.map((it) => `${it.at.toFixed(3)}:${it.lane}:${it.type}`).join(' ');
     /** The layouts of a player's first two rounds on a device whose random base seed is `seed`. */
     function rounds(cfg: typeof CONFIG, seed: number): string[] {
       const { world, ui } = fakes();
@@ -99,7 +99,7 @@ describe('Game', () => {
       return buildConfig({ ...s, mode, roundSeconds: 45, questions: { ...s.questions, enabled: true } });
     };
 
-    it('is the same street, questions included, for every round and every device with "Same for everyone"', () => {
+    it('is the same street, ❓ rows included, for every round and every device with "Same for everyone"', () => {
       const one = rounds(withQuestions('fixed'), 1);
       const other = rounds(withQuestions('fixed'), 987_654);
       expect(one[1]).toBe(one[0]);
@@ -127,19 +127,32 @@ describe('Game', () => {
     clock(game).run(400);
     expect(game.cycles).toBeGreaterThanOrEqual(2);
     const shown = (ui.question.show as ReturnType<typeof vi.fn>).mock.calls.map((call) => (call[0] as Question).id);
-    const perRun = CONFIG.questions.perRun;
-    const first = new Set(shown.slice(0, perRun));
-    const second = shown.slice(perRun, perRun * 2);
+    const first = new Set(shown.slice(0, 2));
+    const second = shown.slice(2, 4);
+    expect(second).toHaveLength(2);
     for (const id of second) expect(first.has(id)).toBe(false);
+  });
+  it('asks a Level 1 question at the halfway row, then a Level 2 question before the finish, with their points', () => {
+    const { world, ui } = fakes();
+    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 8, autoplay: true });
+    clock(game).run(400);
+    const calls = (ui.question.show as ReturnType<typeof vi.fn>).mock.calls as Array<[Question, { n: number; total: number; points: number }]>;
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    for (let i = 0; i < 4; i++) {
+      const [q, info] = calls[i];
+      const level = i % 2 === 0 ? 1 : 2;
+      expect(q.level).toBe(level);
+      expect(info).toEqual({ n: level, total: 2, points: CONFIG.questions.points[level] });
+    }
   });
   it('asks no questions and drops the bonus line when questions are off', () => {
     const { world, ui } = fakes();
-    const cfg = buildConfig({ ...defaultSettings(), questions: { enabled: false, perRun: 3, timeLimit: 10 } });
+    const cfg = buildConfig({ ...defaultSettings(), questions: { ...defaultSettings().questions, enabled: false } });
     const game = new Game({ cfg, bank, world, ui, seed: 3, autoplay: true });
     clock(game).run(120);
     expect(game.cycles).toBeGreaterThanOrEqual(1);
     expect(ui.question.show).not.toHaveBeenCalled();
-    expect(ui.howto.showHowto).toHaveBeenCalledWith(false);
+    expect(ui.howto.showHowto).toHaveBeenCalledWith(null);
   });
 
   it('restarts the start-screen demo with new settings at once', () => {

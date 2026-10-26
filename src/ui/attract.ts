@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config';
 import type { Features } from '../core/settings';
-import { BAD_TYPES, GOOD_TYPES, LANGS, type ItemType } from '../core/types';
+import { BAD_TYPES, GOOD_TYPES, LANGS, type ItemType, type RoadType } from '../core/types';
 import type { I18n } from '../i18n/i18n';
 import type { BoardRow } from '../scores/types';
 import { boardList } from './board';
@@ -30,7 +30,7 @@ export class AttractScreen {
   private boardButton = el('button', 'board-open');
   private board: BoardView | null = null;
 
-  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly icons: Record<ItemType, string>, logoUrl: string | null, onOpenBoard?: () => void) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly icons: Record<RoadType, string>, logoUrl: string | null, onOpenBoard?: () => void) {
     if (logoUrl) {
       const logo = el('img', 'logo');
       logo.src = logoUrl;
@@ -91,19 +91,24 @@ export class AttractScreen {
     this.renderBoard();
     const cfg = this.cfg;
     if (!cfg) return;
+    const entry = (type: RoadType, cls: string, text: string, points: string) => {
+      const li = el('li', cls);
+      const img = el('img');
+      img.src = this.icons[type];
+      img.alt = '';
+      // "Krampus · quỷ Krampus" shows as the name with the hint on a second, smaller line.
+      const [name, hint] = text.split(' · ');
+      const label = el('span', '', name);
+      if (hint) label.append(el('small', '', hint));
+      li.append(img, label, el('b', '', points));
+      return li;
+    };
+    const item = (type: ItemType) => entry(type, cfg.items[type].good ? '' : 'bad', itemLabel(i18n, type), formatPoints(cfg.items[type].points));
+    const q = cfg.questions;
     this.legend.replaceChildren(
-      ...[...GOOD_TYPES, ...BAD_TYPES].map((type) => {
-        const li = el('li', cfg.items[type].good ? '' : 'bad');
-        const img = el('img');
-        img.src = this.icons[type];
-        img.alt = '';
-        // "Krampus · quỷ Krampus" shows as the name with the hint on a second, smaller line.
-        const [name, hint] = itemLabel(i18n, type).split(' · ');
-        const label = el('span', '', name);
-        if (hint) label.append(el('small', '', hint));
-        li.append(img, label, el('b', '', formatPoints(cfg.items[type].points)));
-        return li;
-      }),
+      ...GOOD_TYPES.map(item),
+      ...(q.enabled ? [entry('question', '', i18n.t('item.question'), `${formatPoints(q.points[1])} / ${formatPoints(q.points[2])}`)] : []),
+      ...BAD_TYPES.map(item),
     );
     this.ladder.replaceChildren(
       ...(this.features.showGifts ? cfg.tiers : []).map((t) => {

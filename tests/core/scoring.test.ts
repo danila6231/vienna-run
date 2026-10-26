@@ -14,8 +14,8 @@ describe('scoring', () => {
     expect(applyPoints(30, -15)).toBe(15);
     expect(applyPoints(0, 5)).toBe(5);
   });
-  it('doubles a question item when right and gives nothing when wrong', () => {
-    expect(questionPoints(10, true)).toBe(20);
+  it('gives a question its points when right and nothing when wrong', () => {
+    expect(questionPoints(20, true)).toBe(20);
     expect(questionPoints(15, false)).toBe(0);
   });
   it.each([

@@ -1,4 +1,4 @@
-import type { ItemType } from './core/types';
+import type { ItemType, QuestionLevel } from './core/types';
 
 export interface Tier {
   min: number;
@@ -14,17 +14,20 @@ export interface GameConfig {
   /** Extra share of baseSpeed reached at the finish line. */
   speedRamp: number;
   items: Record<ItemType, { points: number; good: boolean }>;
-  /** Item layout: exact counts in 'fixed' mode, targets that vary ±35% per round in 'random' mode. */
-  /** `seed` picks the street in 'fixed' mode (see layoutSeed in core/spawner.ts). */
+  /**
+   * Item layout: exact counts in 'fixed' mode, targets that vary ±35% per round in 'random' mode.
+   * `seed` picks the street in 'fixed' mode (see layoutSeed in core/spawner.ts).
+   */
   spawn: { firstAt: number; finishClear: number; obstacles: number; treats: number; mode: 'random' | 'fixed'; seed: number };
   collision: { ahead: number; behind: number; laneTolerance: number };
   trayMax: number;
   stumbleSeconds: number;
   questions: {
-    perRun: number;
-    windowStart: number;
-    windowEnd: number;
-    minGap: number;
+    /** Two rows of ❓ across all three lanes: halfway (a Level 1 question) and `lastRowLead` seconds before the finish (Level 2). */
+    enabled: boolean;
+    /** Points for a right answer, by level; a wrong answer or no answer gives 0. */
+    points: Record<QuestionLevel, number>;
+    lastRowLead: number;
     timeLimit: number;
     recentRuns: number;
     feedbackSeconds: number;
@@ -65,13 +68,12 @@ export const CONFIG: GameConfig = {
   trayMax: 6,
   stumbleSeconds: 0.5,
   questions: {
-    perRun: 3,
-    windowStart: 4,
-    // The spec says 35 s; 30 s leaves time to reach a treat before the finish clearing.
-    windowEnd: 30,
-    minGap: 7,
+    enabled: true,
+    points: { 1: 15, 2: 20 },
+    lastRowLead: 5,
     timeLimit: 10,
-    recentRuns: 5,
+    // With five questions per level, avoiding the last two players' questions still leaves three to pick from.
+    recentRuns: 2,
     feedbackSeconds: 1.5,
   },
   flow: {

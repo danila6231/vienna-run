@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { ArtSet } from '../assets/manifest';
 import type { Run } from '../core/run';
-import { BAD_TYPES, GOOD_TYPES, type Item, type ItemType } from '../core/types';
+import { BAD_TYPES, GOOD_TYPES, type Item, type RoadType } from '../core/types';
 import { toTexture } from './canvas';
 import * as P from './placeholders/paint';
 import { fitSquare } from './sizing';
@@ -9,9 +9,9 @@ import { fitSquare } from './sizing';
 export interface ItemsLayer {
   sync(run: Run, px: number): void;
   reset(): void;
-  material(type: ItemType): THREE.SpriteMaterial;
+  material(type: RoadType): THREE.SpriteMaterial;
   /** Width ÷ height of the item's image, so other layers can size copies without stretching them. */
-  aspect(type: ItemType): number;
+  aspect(type: RoadType): number;
 }
 
 interface Obj {
@@ -22,19 +22,20 @@ interface Obj {
 const SIZE = 1.7;
 
 export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number): ItemsLayer {
+  const types: RoadType[] = [...GOOD_TYPES, ...BAD_TYPES, 'question'];
   const mats = Object.fromEntries(
-    [...GOOD_TYPES, ...BAD_TYPES].map((t) => [t, new THREE.SpriteMaterial({ map: toTexture(art.get(`item-${t}`)), alphaTest: 0.3 })]),
-  ) as Record<ItemType, THREE.SpriteMaterial>;
-  const aspects = Object.fromEntries([...GOOD_TYPES, ...BAD_TYPES].map((t) => {
+    types.map((t) => [t, new THREE.SpriteMaterial({ map: toTexture(art.get(`item-${t}`)), alphaTest: 0.3 })]),
+  ) as Record<RoadType, THREE.SpriteMaterial>;
+  const aspects = Object.fromEntries(types.map((t) => {
     const c = art.get(`item-${t}`);
     return [t, c.width / c.height];
-  })) as Record<ItemType, number>;
+  })) as Record<RoadType, number>;
   const blobMat = new THREE.MeshBasicMaterial({ map: toTexture(P.blobCanvas()), transparent: true, depthWrite: false });
   const blobGeo = new THREE.PlaneGeometry(1.5, 0.75);
   const pool: Obj[] = [];
   const live = new Map<number, Obj>();
 
-  const take = (type: ItemType): Obj => {
+  const take = (type: RoadType): Obj => {
     let o = pool.pop();
     if (!o) {
       const sh = new THREE.Mesh(blobGeo, blobMat);
@@ -58,11 +59,12 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
     const x = it.lane * laneWidth;
     const box = fitSquare(aspects[it.type], SIZE);
     if (it.state === 'live') {
-      o.sp.position.set(x, 1.3 + Math.sin(t * 3 + it.id) * 0.16, -r);
+      // A ❓ row bobs as one, so it reads as a gate across the road.
+      o.sp.position.set(x, 1.3 + Math.sin(t * 3 + (it.level ?? it.id)) * 0.16, -r);
       o.sp.scale.set(box.w, box.h, 1);
       o.sh.visible = true;
       o.sh.position.set(x, 0.045, -r);
-    } else if (it.state === 'taken') {
+    } else if (it.state === 'taken' && it.type !== 'question') {
       // Flies up to the musician's baton.
       const k = Math.min(1, it.t / 0.3);
       o.sp.position.set(x + (px + 0.5 - x) * k, 1.3 + 1.9 * k, -r * (1 - k));
@@ -71,7 +73,7 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
       o.sh.visible = false;
       o.sp.visible = k < 1;
     } else {
-      // Obstacle: puffs up and vanishes.
+      // Obstacle hit, or a ❓ row answered: puffs up and vanishes.
       const k = Math.min(1, it.t / 0.25);
       o.sp.scale.set(box.w * (1 + k * 0.8), box.h * (1 + k * 0.8), 1);
       o.sp.position.set(x, 1.3 + k, -r);

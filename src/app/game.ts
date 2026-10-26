@@ -3,10 +3,10 @@ import { Bot, BOT_SKILLS } from '../core/bot';
 import { pickQuestions, updateRecent } from '../core/questions';
 import { createRng, randomSeed } from '../core/rng';
 import { Run } from '../core/run';
-import { layoutSeed } from '../core/spawner';
+import { layoutSeed, questionRows } from '../core/spawner';
 import { tierIndex } from '../core/scoring';
 import type { Features } from '../core/settings';
-import type { Lang, Question, RunEvent } from '../core/types';
+import type { Lang, Question, QuestionLevel, RunEvent } from '../core/types';
 import { I18n } from '../i18n/i18n';
 import { formatPoints } from '../ui/labels';
 import type { GiftInfo, ResultsInfo } from '../ui/results';
@@ -32,9 +32,11 @@ export interface GameUi {
     clear(): void;
   };
   attract: { show(): void; hide(): void; configure(cfg: GameConfig, features: Features): void };
-  howto: { showHowto(questionsOn: boolean): void; showCount(n: number): void; hide(): void };
+  /** `questionPoints` is null when questions are off. */
+  howto: { showHowto(questionPoints: Record<QuestionLevel, number> | null): void; showCount(n: number): void; hide(): void };
   question: {
-    show(q: Question, basePoints: number, onPick: (index: number) => void): void;
+    /** `n` of `total`: which ❓ row this is; `points` for a right answer. */
+    show(q: Question, info: { n: number; total: number; points: number }, onPick: (index: number) => void): void;
     tick(fraction: number, secondsLeft: number): void;
     reveal(correct: number, picked: number | null): void;
     hide(): void;
@@ -94,8 +96,9 @@ export class Game {
   private seed: number;
   private demoBot: Bot | null = null;
   private playerBot: Bot | null = null;
-  private questions: Question[] = [];
-  private asked = 0;
+  /** This round's question for each ❓ row, picked at random when the round starts. */
+  private questions: Partial<Record<QuestionLevel, Question>> = {};
+  private asked: string[] = [];
   private current: Question | null = null;
   private picked: number | null = null;
   private goTimer = 0;
@@ -252,9 +255,14 @@ export class Game {
         this.demoBot = null;
         this.run = this.newRun();
         this.playerBot = this.o.autoplay ? new Bot(createRng(this.seed * 7 + 1), BOT_SKILLS.average) : null;
-        this.questions = pickQuestions(createRng(this.seed * 13 + 5), this.o.bank, cfg.questions.perRun, (this.o.recent?.read() ?? []).flat());
-        this.asked = 0;
-        ui.howto.showHowto(cfg.questions.perRun > 0);
+        {
+          const rng = createRng(this.seed * 13 + 5);
+          const recent = (this.o.recent?.read() ?? []).flat();
+          const pick = (level: QuestionLevel) => pickQuestions(rng, this.o.bank.filter((q) => q.level === level), 1, recent)[0];
+          this.questions = { 1: pick(1), 2: pick(2) };
+        }
+        this.asked = [];
+        ui.howto.showHowto(cfg.questions.enabled ? cfg.questions.points : null);
         ui.hud.update(0, 0);
         ui.hud.show(true);
         break;
@@ -271,17 +279,18 @@ export class Game {
         }
         break;
       case 'question': {
-        this.current = this.questions[this.asked] ?? null;
-        this.picked = null;
         const item = this.run.pending;
+        const level = item?.level ?? 1;
+        this.current = this.questions[level] ?? null;
+        this.picked = null;
         if (!this.current || !item) {
           this.flow.answer(true);
           break;
         }
-        this.asked++;
+        this.asked.push(this.current.id);
         audio.play('question');
         const q = this.current;
-        ui.question.show(q, cfg.items[item.type].points, (i) => {
+        ui.question.show(q, { n: level, total: questionRows(cfg).length, points: cfg.questions.points[level] }, (i) => {
           this.picked = i;
           this.flow.answer(i === q.answer);
         });
@@ -291,13 +300,12 @@ export class Game {
         if (this.current) ui.question.reveal(this.current.answer, this.picked);
         break;
       case 'finish':
-        this.entryId = this.o.scores?.addRound({ score: this.run.score, lang: this.i18n.lang, questionsOn: cfg.questions.perRun > 0 }) ?? null;
+        this.entryId = this.o.scores?.addRound({ score: this.run.score, lang: this.i18n.lang, questionsOn: cfg.questions.enabled }) ?? null;
         audio.play('finish');
         ui.fx.banner(this.i18n.t('finish.title'), this.i18n.t('finish.points', { score: this.run.score }), cfg.flow.finishSeconds);
         ui.fx.confetti();
         if (this.o.recent) {
-          const used = this.questions.slice(0, this.asked).map((q) => q.id);
-          this.o.recent.write(updateRecent(this.o.recent.read(), used, cfg.questions.recentRuns));
+          this.o.recent.write(updateRecent(this.o.recent.read(), this.asked, cfg.questions.recentRuns));
         }
         break;
       case 'results': {

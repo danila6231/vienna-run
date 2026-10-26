@@ -1,7 +1,7 @@
 # Step into Vienna
 
 A 40-second Vienna-themed booth runner: tap left/right to switch lanes, catch the music (🎹 🎻 🎼 🎶), dodge Krampus
-and bombs, answer surprise questions for double points, and win a gift by score tier.
+and bombs, answer two quiz questions (rows of ❓ across the road) for bonus points, and win a gift by score tier.
 
 - Design spec: `docs/superpowers/specs/2026-10-03-vienna-run-design.md`
 - Art brief for the designer: `docs/ASSET_SPEC.md`
@@ -32,7 +32,9 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   every device with the same settings; a share code copies it to another booth). Change the **layout seed**
   for a different street.
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
-- **Bonus questions:** on/off, how many per round, seconds to answer.
+- **Questions:** on/off (on by default), points for a right Level 1 and Level 2 answer (15 and 20), seconds to
+  answer. Every player meets two rows of ❓ across all three lanes: halfway (a random Level 1 question) and 5 s before
+  the finish (a random Level 2 question). A wrong answer or no answer gives 0.
 - **Sound:** the background music on or off. Per device.
 - **Graphics:** the street in **3D** (default) or **Paper (lighter)**, the flat cutout houses and landmarks, as a
   fallback for a PC that can't keep 50 fps. Per device; saving a change restarts the game.
@@ -41,7 +43,7 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
 defaults (also what **Reset to defaults** restores) are the booth's tuned round: 45 s at 90→110 km/h,
-"Same for everyone" with 40 obstacles and 75 rewards, Krampus −20, bomb −25, bonus questions off.
+"Same for everyone" with 40 obstacles and 75 rewards, Krampus −20, bomb −25, questions on.
 
 ## Music
 The Habanera from Bizet's *Carmen* (instrumental, London Festival Orchestra; supplied by the booth team) loops
@@ -51,9 +53,9 @@ settings → Sound.
 
 ## Languages
 The game starts in **Vietnamese**. The **VI | EN** pill on the start screen switches to English for one
-player; the game returns to Vietnamese after every round. Texts live in `src/i18n/strings.ts`, and
-questions (both languages) in `src/data/questions.json`. The Vietnamese texts were machine-written:
-**have a native speaker review them before the event.**
+player; the game returns to Vietnamese after every round. Texts live in `src/i18n/strings.ts`, and the
+quiz questions in `src/data/questions.json` (Vietnamese from the booth team, English translated from it).
+The other Vietnamese texts were machine-written: **have a native speaker review them before the event.**
 
 ## Leaderboard
 Players can save a code name (A–Z, 0–9, up to 12 characters) on the results screen. The start screen
@@ -72,8 +74,9 @@ shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
 - **USB copy:** built without Supabase details, so its leaderboard stays on that PC.
 
 ## Changing things
-- **Points, difficulty, gift tiers:** use the staff settings menu. Defaults: `defaultSettings()` in `src/core/settings.ts` (difficulty, bonus questions) and `src/config.ts` (points, gift tiers); `npm run simulate` shows the score spread for each preset.
-- **Questions:** `src/data/questions.json`. Put the right answer first; the game shuffles. `npm test` validates the file.
+- **Points, difficulty, gift tiers:** use the staff settings menu. Defaults: `defaultSettings()` in `src/core/settings.ts` (difficulty, questions) and `src/config.ts` (points, gift tiers); `npm run simulate` shows the score spread for each preset.
+- **Questions:** `src/data/questions.json`, five per level (`"level": 1` or `2`); `answer` is the index of the right
+  option. Each player gets one random question per level, with the options shuffled. `npm test` validates the file.
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
 - **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/` (the paper cards remain as the

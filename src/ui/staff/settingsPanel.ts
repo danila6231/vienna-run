@@ -102,14 +102,15 @@ const pointsAndGifts: Section = {
 };
 
 const questions: Section = {
-  title: 'Bonus questions',
+  title: 'Questions',
   render({ draft: d, edit }) {
     const box = el('div');
     box.append(
-      toggle('Bonus questions', d.questions.enabled, (v) => edit((x) => { x.questions.enabled = v; })),
-      numberField('Questions per round', d.questions.perRun, LIMITS.perRun, (v) => edit((x) => { x.questions.perRun = v; })),
+      toggle('Questions', d.questions.enabled, (v) => edit((x) => { x.questions.enabled = v; })),
+      numberField('Level 1 points', d.questions.level1Points, LIMITS.questionPoints, (v) => edit((x) => { x.questions.level1Points = v; }), 'points'),
+      numberField('Level 2 points', d.questions.level2Points, LIMITS.questionPoints, (v) => edit((x) => { x.questions.level2Points = v; }), 'points'),
       numberField('Time to answer', d.questions.timeLimit, LIMITS.timeLimit, (v) => edit((x) => { x.questions.timeLimit = v; }), 's'),
-      note("A right answer doubles that reward's points; a wrong answer or no answer gives 0."),
+      note('Every player gets two questions: a row of ❓ across all three lanes halfway (a random Level 1 question) and another 5 s before the finish (Level 2). A right answer gives these points; a wrong answer or no answer gives 0.'),
     );
     return box;
   },

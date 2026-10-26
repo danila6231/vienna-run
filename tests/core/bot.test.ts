@@ -9,19 +9,19 @@ import { simulateRun, summarize } from '../../src/core/simulate';
 const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-const mk = (at: number, lane: Lane, type: ItemType): Item => ({ id: at * 10 + lane + 2, at, lane, type, state: 'live', t: 0, question: false });
+const mk = (at: number, lane: Lane, type: ItemType | 'question'): Item => ({ id: at * 10 + lane + 2, at, lane, type, state: 'live', t: 0, level: type === 'question' ? 1 : undefined });
 /** Advance the run alone (no bot) until the runner reaches `dist`. */
 const runTo = (run: Run, dist: number) => { while (run.dist < dist) run.update(1 / 60); };
 
 describe('Bot', () => {
   it('never steers into an obstacle that is right beside it, even for treats behind it', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 1, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')], slots: [] });
+    const run = new Run({ seed: 1, items: [mk(10, 1, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')] });
     runTo(run, 9.5);
     new Bot(createRng(1), { ...BOT_SKILLS.skilled, mistakeRate: 0 }).step(run, 1 / 60);
     expect(run.lane).toBe(0);
   });
   it('does not cut through a lane with an obstacle right beside it on the way to a far lane', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 0, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')], slots: [] });
+    const run = new Run({ seed: 1, items: [mk(10, 0, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')] });
     run.move(-1);
     runTo(run, 9.5);
     new Bot(createRng(1), { ...BOT_SKILLS.skilled, mistakeRate: 0 }).step(run, 1 / 60);
@@ -38,10 +38,16 @@ describe('Bot', () => {
     const casual = mean(seeds.map((s) => simulateRun(s, BOT_SKILLS.casual).hits));
     expect(skilled).toBeLessThan(casual);
   });
-  it('gives an average player the full set of questions in almost every run', () => {
-    const full = Array.from({ length: 100 }, (_, i) => simulateRun(i + 1, BOT_SKILLS.average).questions)
-      .filter((n) => n === CONFIG.questions.perRun).length;
-    expect(full).toBeGreaterThanOrEqual(85);
+  it('asks every player both questions, however they play', () => {
+    for (const skill of Object.values(BOT_SKILLS)) {
+      for (let s = 1; s <= 30; s++) expect(simulateRun(s, skill).questions).toBe(2);
+    }
+  });
+  it('steers by the rewards and obstacles, not by a ❓ row', () => {
+    const run = new Run({ seed: 1, items: [mk(12, -1, 'question'), mk(12, 0, 'question'), mk(12, 1, 'question'), mk(16, 1, 'piano')] });
+    runTo(run, 9.5);
+    new Bot(createRng(1), { ...BOT_SKILLS.skilled, mistakeRate: 0 }).step(run, 1 / 60);
+    expect(run.lane).toBe(1);
   });
 });
 

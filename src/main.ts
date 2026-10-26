@@ -19,7 +19,7 @@ import { loadArt } from './assets/manifest';
 import { CONFIG } from './config';
 import { validateBank } from './core/questions';
 import { buildConfig, featuresOf, type StreetLook } from './core/settings';
-import { BAD_TYPES, GOOD_TYPES, type ItemType } from './core/types';
+import { BAD_TYPES, GOOD_TYPES, type RoadType } from './core/types';
 import bankJson from './data/questions.json';
 import { I18n } from './i18n/i18n';
 import { attachInput } from './input/touch';
@@ -118,7 +118,7 @@ async function boot(): Promise<void> {
   scores.start();
   const boardModal = new BoardModal(stage, i18n, scores);
 
-  const icons = Object.fromEntries([...GOOD_TYPES, ...BAD_TYPES].map((t) => [t, art.get(`item-${t}`).toDataURL()])) as Record<ItemType, string>;
+  const icons = Object.fromEntries([...GOOD_TYPES, 'question', ...BAD_TYPES].map((t) => [t, art.get(`item-${t}`).toDataURL()])) as Record<RoadType, string>;
   const ui = {
     hud: new Hud(stage, i18n),
     fx: new Fx(stage),

@@ -21,10 +21,9 @@ const type = (f: HTMLInputElement | HTMLTextAreaElement, value: string) => {
   f.dispatchEvent(new Event('change', { bubbles: true }));
 };
 
-/** Normal difficulty with bonus questions on: the panel tests below start from it, not from the booth defaults. */
+/** Normal difficulty: the panel tests below start from it, not from the booth defaults. */
 function normal(): Settings {
-  const s = applyPreset(defaultSettings(), 'normal');
-  return { ...s, questions: { ...s.questions, enabled: true } };
+  return applyPreset(defaultSettings(), 'normal');
 }
 
 function setup(current: Settings = normal(), sections?: Section[]) {
@@ -67,10 +66,9 @@ describe('SettingsPanel', () => {
   });
   it('refuses to save settings that cannot work, and says why', () => {
     const { root, onSave } = setup();
-    type(field(root, 'Round length'), '20');
-    type(field(root, 'Questions per round'), '5');
+    type(field(root, 'Settings PIN'), '12');
     expect(buttonNamed(root, 'Save').disabled).toBe(true);
-    expect(root.textContent).toContain('5 questions need a round of at least 28 s.');
+    expect(root.textContent).toContain('The PIN must be exactly 4 digits.');
     buttonNamed(root, 'Save').click();
     expect(onSave).not.toHaveBeenCalled();
   });
@@ -90,11 +88,21 @@ describe('SettingsPanel', () => {
     click(root, 'Save');
     expect(onSave.mock.calls[0][0]).toMatchObject({ seed: 2, preset: 'normal' });
   });
-  it('switches bonus questions off', () => {
+  it('switches questions off', () => {
     const { root, onSave } = setup();
-    click(root, 'Bonus questions');
+    click(root, 'Questions');
     click(root, 'Save');
     expect(onSave.mock.calls[0][0].questions.enabled).toBe(false);
+  });
+  it('sets the points for each question level', () => {
+    const { root, onSave } = setup();
+    expect(field(root, 'Level 1 points').value).toBe('15');
+    expect(field(root, 'Level 2 points').value).toBe('20');
+    type(field(root, 'Level 1 points'), '18');
+    click(root, 'Level 2 points up');
+    click(root, 'Save');
+    expect(onSave.mock.calls[0][0].questions).toMatchObject({ level1Points: 18, level2Points: 21 });
+    expect(root.textContent).not.toContain('Questions per round');
   });
   it('mutes the sound', () => {
     const { root, onSave } = setup();
