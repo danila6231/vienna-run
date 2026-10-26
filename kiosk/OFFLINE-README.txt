@@ -1,4 +1,4 @@
-Vienna Run: offline copy
+Step into Vienna: offline copy
 
 1. Copy this whole folder to the booth PC (for example C:\vienna-run).
 2. Double-click launch-offline.bat. The game opens full screen in Microsoft Edge.

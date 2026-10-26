@@ -1,11 +1,11 @@
 // Builds the 3D street viewer (demo/buildings) into one self-contained HTML file for sharing:
-// dist-demo/vienna-run-street-looks.html.
+// dist-demo/step-into-vienna-street-looks.html.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const OUT = `${root}dist-demo/vienna-run-street-looks.html`;
+const OUT = `${root}dist-demo/step-into-vienna-street-looks.html`;
 
 await build({
   configFile: false,

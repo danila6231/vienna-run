@@ -19,7 +19,7 @@ Do these on the booth PC on setup day, in order.
 7. **Volume:** muted (the game is silent).
 
 ## Game
-8. Copy `vienna-run-offline.zip` to the PC, unzip to `C:\vienna-run`.
+8. Copy `step-into-vienna-offline.zip` to the PC, unzip to `C:\vienna-run`.
    If the venue Wi-Fi is decent, also run `launch-online.bat` once while online (that version updates itself).
 9. Run the self-check: open the game with `?check=1` (see `OFFLINE-README.txt`).
    - Touch all 9 squares, especially the corners. All must turn green.

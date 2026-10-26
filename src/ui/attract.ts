@@ -34,10 +34,10 @@ export class AttractScreen {
     if (logoUrl) {
       const logo = el('img', 'logo');
       logo.src = logoUrl;
-      logo.alt = 'Vienna Run';
+      logo.alt = 'Step into Vienna';
       this.card.append(logo);
     } else {
-      this.card.append(el('h1', '', 'Vienna Run'));
+      this.card.append(el('h1', '', 'Step into Vienna'));
     }
     this.ladder.hidden = true;
     this.card.append(this.tagline, this.legend, this.ladder, this.cta);

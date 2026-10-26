@@ -16,7 +16,7 @@
     "build:offline": "tsc --noEmit && vite build --mode offline",
     "e2e": "playwright test",
     "soak": "SOAK_ROUNDS=200 playwright test tests/e2e/soak.spec.ts",
-    "package:offline": "npm run build:offline && cp kiosk/launch-offline.bat kiosk/OFFLINE-README.txt dist-offline/ && cd dist-offline && zip -qr ../vienna-run-offline.zip .",
+    "package:offline": "npm run build:offline && cp kiosk/launch-offline.bat kiosk/OFFLINE-README.txt dist-offline/ && cd dist-offline && zip -qr ../step-into-vienna-offline.zip .",
     "migrate-db": "tsx scripts/migrate-db.ts",
     "demo:buildings": "tsx scripts/build-demo.ts",
     "vercel-build": "tsx scripts/migrate-db.ts && npm run build"

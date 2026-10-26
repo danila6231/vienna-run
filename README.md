@@ -1,4 +1,4 @@
-# Vienna Run
+# Step into Vienna
 
 A 40-second Vienna-themed booth runner: tap left/right to switch lanes, catch the music (🎹 🎻 🎼 🎶), dodge Krampus
 and bombs, answer surprise questions for double points, and win a gift by score tier.
@@ -15,7 +15,7 @@ and bombs, answer surprise questions for double points, and win a gift by score 
 | `npm run simulate` | Plays thousands of bot rounds and writes `docs/simulation-report.md` (gift tier shares) |
 | `npm run build` | Hosted build in `dist/` (works offline after first load) |
 | `npm run build:offline` | One self-contained `dist-offline/index.html` |
-| `npm run package:offline` | `vienna-run-offline.zip` for the USB stick |
+| `npm run package:offline` | `step-into-vienna-offline.zip` for the USB stick |
 | `npm run e2e` | Browser tests: smoke, offline, 20-round soak |
 | `npm run soak` | 200-round soak test (run once before the event) |
 
@@ -70,7 +70,7 @@ shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
 - **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/` (the paper cards remain as the
   Graphics → Paper fallback). `npm run demo:buildings`
-  builds a one-file street viewer (`dist-demo/vienna-run-street-looks.html`) with a free camera for checking them.
+  builds a one-file street viewer (`dist-demo/step-into-vienna-street-looks.html`) with a free camera for checking them.
 
 ## Deploy
 Production: https://vienna-run.vercel.app (Vercel project `vienna-run`, built from `main` of

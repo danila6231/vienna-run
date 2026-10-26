@@ -118,7 +118,7 @@ export function leaderboardSection(source: LogSource, download: (filename: strin
           refreshStatus();
         },
       );
-      const exportCsv = button('Export CSV', () => download(`vienna-run-scores-${day(now())}.csv`, source.exportCsv()));
+      const exportCsv = button('Export CSV', () => download(`step-into-vienna-scores-${day(now())}.csv`, source.exportCsv()));
 
       const box = el('div');
       box.append(

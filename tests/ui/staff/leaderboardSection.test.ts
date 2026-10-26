@@ -75,7 +75,7 @@ describe('leaderboard settings', () => {
     expect(source.remove).toHaveBeenCalledWith('a');
     expect(root.querySelectorAll('.st-logrow')).toHaveLength(1);
     click('Export CSV');
-    expect(download).toHaveBeenCalledWith('vienna-run-scores-2026-10-03.csv', 'time,board\r\n');
+    expect(download).toHaveBeenCalledWith('step-into-vienna-scores-2026-10-03.csv', 'time,board\r\n');
     click('Clear log');
     expect(source.clearLog).not.toHaveBeenCalled();
     click('Delete all');

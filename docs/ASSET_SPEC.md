@@ -1,13 +1,13 @@
-# Vienna Run: art brief
+# Step into Vienna: art brief
 
-Vienna Run is a 40-second booth game. A Mozart-style musician runs down a Vienna street
+Step into Vienna is a 40-second booth game. A Mozart-style musician runs down a Vienna street
 from Stephansdom to the Riesenrad, catching music (a piano, a violin, sheet music, notes) and dodging Krampus and bombs. The houses
 and landmarks are **3D models built in code** (`src/render/buildings/`), lit from the upper left
 in the palette below. Everything else is a flat, illustrated paper cutout standing in that street:
 the musician, the rewards, lamps, clouds, the tram, the finish banner. This brief covers those
 cutouts, plus the paper houses and landmarks that staff can switch to on a PC too weak for 3D
 (settings → Graphics → Paper); those rows are marked *Paper look only* and matter least. To see the street, run `npm run demo:buildings` and open
-`dist-demo/vienna-run-street-looks.html`.
+`dist-demo/step-into-vienna-street-looks.html`.
 
 ## The short version
 - **Every file here is a flat image.** The buildings are not files; they are built in code. The
@@ -65,7 +65,7 @@ yet keeps its placeholder, so you can deliver piece by piece.
 | `texture-road.png` | 1 | 1024×1024 | **Seamless tiling** cobblestones, no transparency, **no lane lines** (the game draws them). One tile covers 9 m × 9 m (the full 3-lane road width). |
 | `texture-sidewalk.png` | 1 | 512×512 | **Seamless tiling** paving slabs; one tile covers 3.4 m × 3.4 m. |
 | `gift-0.png`, `gift-1.png` … | — | 512×512 | **Not used right now** (gift display was removed from the game). Skip unless it comes back. |
-| `logo.svg` | 0–1 | vector | Optional; replaces the "Vienna Run" title on the start screen. |
+| `logo.svg` | 0–1 | vector | Optional; replaces the "Step into Vienna" title on the start screen. |
 
 ## Two anchors that must match across musician frames
 - **Feet:** bottom center of every frame (x = 256, y = 768).

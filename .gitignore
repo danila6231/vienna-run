@@ -4,6 +4,7 @@ dist-offline/
 dist-demo/
 test-results/
 playwright-report/
+step-into-vienna-offline.zip
 vienna-run-offline.zip
 .vercel/
 .DS_Store
