@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG, type GameConfig } from '../../src/config';
 import { createRng } from '../../src/core/rng';
 import { buildConfig, defaultSettings } from '../../src/core/settings';
-import { generateItems, layoutSeed, PACE, ROW_CLEAR } from '../../src/core/spawner';
+import { generateItems, layoutSeed, PACE, ROW_CLEAR, timeAt } from '../../src/core/spawner';
 import { isGood, type Item } from '../../src/core/types';
 
 const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -91,12 +91,6 @@ describe('generateItems', () => {
 describe('pace', () => {
   const booth = buildConfig(defaultSettings());
   const boothRun = (seed: number) => generateItems(createRng(seed), booth);
-  /** Seconds from the start line to `d`, with the speed ramping up along the route. */
-  const timeAt = (cfg: GameConfig, d: number) => {
-    let t = 0;
-    for (let x = 0; x < d; x += 0.5) t += 0.5 / (cfg.baseSpeed * (1 + cfg.speedRamp * (x / cfg.runLength)));
-    return t;
-  };
 
   it.each([['booth', booth], ['default', CONFIG], ['busy', withSpawn({ mode: 'fixed', obstacles: 30, treats: 80 })]])('never puts more than three rewards in a row in one lane (%s)', (_name, cfg) => {
     for (const s of seeds.slice(0, 60)) {
@@ -110,7 +104,7 @@ describe('pace', () => {
   });
   it('starts gently: only single obstacles in the first seconds', () => {
     for (const s of seeds.slice(0, 40)) {
-      for (const g of obstacleGroups(boothRun(s))) if (g[0].at < PACE.gentleSeconds * booth.baseSpeed) expect(g).toHaveLength(1);
+      for (const g of obstacleGroups(boothRun(s))) if (timeAt(booth, g[0].at) < PACE.gentleSeconds) expect(g).toHaveLength(1);
     }
   });
   it('blocks two lanes in about half the obstacle patterns', () => {
@@ -196,6 +190,14 @@ describe('question rows', () => {
   });
   it('are left out when questions are off', () => {
     for (const s of seeds.slice(0, 20)) expect(asks(run(s, noQuestions(CONFIG)))).toEqual([]);
+  });
+});
+
+describe('timeAt', () => {
+  it('matches the run: speed ramping up evenly with distance', () => {
+    const cfg = buildConfig(defaultSettings());
+    expect(timeAt(cfg, cfg.runLength)).toBeCloseTo(45, 1);
+    expect(timeAt({ ...cfg, speedRamp: 0 }, 100)).toBeCloseTo(100 / cfg.baseSpeed, 6);
   });
 });
 

@@ -39,14 +39,14 @@ describe('SettingsPanel', () => {
     const { root, panel } = setup();
     expect(panel.isOpen).toBe(true);
     expect(root.querySelector('[data-preset="normal"]')?.classList.contains('on')).toBe(true);
-    expect(field(root, 'Obstacles per round').value).toBe('11');
+    expect(field(root, 'Obstacles per round').value).toBe('80');
   });
   it('fills every difficulty value from a preset and saves it', () => {
     const { root, onSave, onClose } = setup();
     click(root, 'Hard');
-    expect(field(root, 'Obstacles per round').value).toBe('16');
+    expect(field(root, 'End speed').value).toBe('170');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ preset: 'hard', startSpeedKmh: 58, endSpeedKmh: 76, obstacles: 16 }));
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ preset: 'hard', startSpeedKmh: 110, endSpeedKmh: 170, obstacles: 80, treats: 65 }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(root.hidden).toBe(true);
   });
@@ -74,12 +74,10 @@ describe('SettingsPanel', () => {
   });
   it('warns, without blocking Save, when the counts cannot fit the round', () => {
     const { root } = setup();
-    type(field(root, 'Rewards per round'), '80');
-    type(field(root, 'Obstacles per round'), '40');
+    type(field(root, 'Round length'), '20');
     expect(root.querySelector('.st-warnings')?.textContent).toMatch(/rewards fit/);
     expect(buttonNamed(root, 'Save').disabled).toBe(false);
-    type(field(root, 'Rewards per round'), '31');
-    type(field(root, 'Obstacles per round'), '11');
+    type(field(root, 'Round length'), '45');
     expect(root.querySelector('.st-warnings')?.textContent).toBe('');
   });
   it('changes the layout seed', () => {
@@ -138,14 +136,14 @@ describe('SettingsPanel', () => {
     const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false });
     click(root, 'Reset to defaults');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 50, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'normal', obstacles: 80, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false }));
   });
   it('loads a share code, and rejects a bad one without changing anything', () => {
     const { root } = setup();
     type(field(root, 'Share code to load'), 'nonsense');
     click(root, 'Load code');
     expect(root.textContent).toContain('That code is not valid');
-    expect(field(root, 'Obstacles per round').value).toBe('11');
+    expect(field(root, 'Obstacles per round').value).toBe('80');
     type(field(root, 'Share code to load'), toShareCode({ ...defaultSettings(), obstacles: 25 }));
     click(root, 'Load code');
     expect(field(root, 'Obstacles per round').value).toBe('25');

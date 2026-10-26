@@ -27,7 +27,8 @@ and bombs, answer two quiz questions (rows of ❓ across the road) for bonus poi
 For now, the **⚙ Settings** button in the top-left corner of the start screen opens the menu with no PIN.
 Set `QUICK_SETTINGS = false` in `src/main.ts` to hide it again: staff then **hold the top-left corner
 for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The menu sets:
-- **Difficulty:** Easy / Normal / Hard presets; round length, start and end speed, obstacles and rewards
+- **Difficulty:** Easy / Normal / Hard presets (all 45 s with 65 rewards: Easy 70→110 km/h and 50 obstacles, Normal
+  90→150 km/h and 80, Hard 110→170 km/h and 80); round length, start and end speed, obstacles and rewards
   per round; "Random each round" or "Same for everyone" (the same street, item for item, in every round and on
   every device with the same settings; a share code copies it to another booth). Change the **layout seed**
   for a different street.
@@ -42,8 +43,8 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   another device.
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
-defaults (also what **Reset to defaults** restores) are the booth's round: 45 s at 90→150 km/h (up to 170),
-"Same for everyone" with 50 obstacles (up to 80) and 75 rewards, Krampus −20, bomb −25, questions on.
+defaults (also what **Reset to defaults** restores) are the booth's round, Normal: 45 s at 90→150 km/h,
+"Same for everyone" with 80 obstacles and 65 rewards, Krampus −20, bomb −25, questions on.
 
 ## Music
 The Habanera from Bizet's *Carmen* (instrumental, London Festival Orchestra; supplied by the booth team) loops
@@ -81,7 +82,7 @@ results screen opens the same lists with the player's own row highlighted.
 - **Questions:** `src/data/questions.json`, five per level (`"level": 1` or `2`); `answer` is the index of the right
   option. Each player gets one random question per level, with the options shuffled. `npm test` validates the file.
 - **How the street is laid out:** `src/core/spawner.ts`. Items come in patterns (one or two obstacles side by side;
-  three rewards in a line or a zigzag; single rewards), spread evenly, never closer than 0.4 s. `PACE` holds the rules
+  three rewards in a line or a zigzag; single rewards), spread evenly; obstacles at least 0.5 s apart on average at top speed. `PACE` holds the rules
   that keep players moving: about half the obstacles leave one way through, the first 8 s only have single obstacles,
   a lane left clear for 1.5 s gets the next obstacle, the escape lane moves on after two obstacles (at most one lane
   at a time), most rewards lead into the next escape lane, and never more than three rewards in a row in one lane.

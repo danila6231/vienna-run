@@ -5,10 +5,10 @@ import { BAD_TYPES, type Item, type Lane, type QuestionLevel, type RoadType } fr
 const LANES: readonly Lane[] = [-1, 0, 1];
 // Cheap rewards appear more often than the piano.
 const GOOD_WEIGHTED: readonly RoadType[] = ['piano', 'violin', 'violin', 'sheet', 'sheet', 'sheet', 'notes', 'notes', 'notes'];
-/** Closest two patterns may sit, in metres, so every obstacle stays readable and dodgeable. */
+/** Closest two patterns may sit on average, in metres, so items never pile up. */
 export const MIN_PATTERN_SPACING = 14;
-/** …and in seconds at the local speed, which is the tighter limit at the booth's top speeds. */
-export const MIN_PATTERN_SECONDS = 0.4;
+/** Average time between obstacle patterns at top speed, at least, so every obstacle stays readable and dodgeable. */
+export const MIN_OBSTACLE_SECONDS = 0.5;
 /** Seconds of road kept free of obstacles and rewards before and after each ❓ row. */
 export const ROW_CLEAR = { before: 0.75, after: 1 };
 /** What keeps a round from being lazy: */
@@ -32,6 +32,12 @@ export const PACE = {
 type Pattern = { kind: 'obstacle'; size: 1 | 2; reward: boolean } | { kind: 'line' } | { kind: 'zigzag' } | { kind: 'single' };
 
 const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
+
+/** Seconds from the start line to `d` metres: the speed ramps up evenly with distance (see Run.update). */
+export function timeAt(cfg: GameConfig, d: number): number {
+  const r = cfg.speedRamp;
+  return r > 1e-9 ? (cfg.runLength / (cfg.baseSpeed * r)) * Math.log(1 + (r * d) / cfg.runLength) : d / cfg.baseSpeed;
+}
 
 /** Where the ❓ rows cross the road: halfway (Level 1) and `lastRowLead` seconds before the finish line (Level 2). */
 export function questionRows(cfg: GameConfig): Array<{ at: number; level: QuestionLevel }> {
@@ -101,9 +107,12 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
       good--;
     }
   }
-  // 3. Too crowded for this route at its top speed? Drop reward patterns first, then obstacles.
-  const minSpacing = Math.max(MIN_PATTERN_SPACING, MIN_PATTERN_SECONDS * endSpeed);
-  while (patterns.length > 0 && span / patterns.length < minSpacing) {
+  // 3. Too crowded for this route at its top speed? Drop reward patterns first, then obstacles. Rewards may sit
+  // between obstacles; it is the obstacles that need time apart.
+  const obstacleSpacing = Math.max(MIN_PATTERN_SPACING, MIN_OBSTACLE_SECONDS * endSpeed);
+  const crowded = () =>
+    span / patterns.length < MIN_PATTERN_SPACING || span / patterns.filter((p) => p.kind === 'obstacle').length < obstacleSpacing;
+  while (patterns.length > 0 && crowded()) {
     let drop = patterns.length - 1;
     for (let i = patterns.length - 1; i >= 0; i--) {
       if (patterns[i].kind !== 'obstacle') {
@@ -144,11 +153,11 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   });
 
   // 5. A gentle start: two-lane obstacles in the first seconds trade places with later single ones (counts stay exact).
-  const gentleUntil = PACE.gentleSeconds * cfg.baseSpeed;
+  const gentle = (at: number) => timeAt(cfg, at) < PACE.gentleSeconds;
   const obstacles = placed.filter((x) => x.p.kind === 'obstacle') as Array<{ p: Extract<Pattern, { kind: 'obstacle' }>; at: number }>;
   for (const early of obstacles) {
-    if (early.at >= gentleUntil || early.p.size === 1) continue;
-    const late = [...obstacles].reverse().find((x) => x.at >= gentleUntil && x.p.size === 1);
+    if (!gentle(early.at) || early.p.size === 1) continue;
+    const late = [...obstacles].reverse().find((x) => !gentle(x.at) && x.p.size === 1);
     if (!late) break;
     [early.p, late.p] = [late.p, early.p];
   }
@@ -159,12 +168,12 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   const clearSince: Record<Lane, number> = { [-1]: firstAt, 0: firstAt, 1: firstAt } as Record<Lane, number>;
   let lastFree: Lane | null = null;
   let sameRun = 0;
-  let lastObstacleAt = -Infinity;
+  let lastObstacleAt: number | null = null;
   for (const x of placed) {
     if (x.p.kind !== 'obstacle') continue;
     const size = x.p.size;
-    const v = speedAt(x.at);
-    const canMove = (x.at - lastObstacleAt) / v >= PACE.moveSeconds;
+    const now = timeAt(cfg, x.at);
+    const canMove = lastObstacleAt === null || now - timeAt(cfg, lastObstacleAt) >= PACE.moveSeconds;
     let options: Lane[] = lastFree === null ? [...LANES] : LANES.filter((l) => Math.abs(l - lastFree!) <= 1);
     if (lastFree !== null && !canMove) options = [lastFree];
     else if (lastFree !== null && sameRun >= PACE.sameFreeLane) options = options.filter((l) => l !== lastFree);
@@ -173,7 +182,7 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
       const others = shuffle(rng, LANES.filter((l) => l !== f));
       return size === 2 ? others : [others.reduce((a, b) => (clearSince[b] < clearSince[a] ? b : a))];
     };
-    const rested = (l: Lane) => x.at >= gentleUntil && (x.at - clearSince[l]) / v > PACE.restSeconds;
+    const rested = (l: Lane) => !gentle(x.at) && now - timeAt(cfg, clearSince[l]) > PACE.restSeconds;
     const choices = shuffle(rng, options).map((f) => ({ f, blocked: blockedFor(f) }));
     const score = (c: (typeof choices)[number]) => LANES.filter((l) => rested(l) && c.blocked.includes(l)).length - (rested(c.f) ? 0.5 : 0);
     const best = choices.reduce((a, b) => (score(b) > score(a) ? b : a));

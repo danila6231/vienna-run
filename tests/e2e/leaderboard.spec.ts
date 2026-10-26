@@ -62,5 +62,5 @@ test('a score saved offline uploads exactly once when the connection returns', a
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await page.waitForTimeout(1_500);
   expect(posted).toHaveLength(1);
-  expect(rows[0]).toMatchObject({ name: 'Bo', board: 'booth', lang: 'vi', preset: 'custom', questions_on: true });
+  expect(rows[0]).toMatchObject({ name: 'Bo', board: 'booth', lang: 'vi', preset: 'normal', questions_on: true });
 });

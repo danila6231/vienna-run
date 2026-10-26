@@ -19,12 +19,12 @@ test('staff open settings with the Settings button, pick Hard, and the next roun
 
   await page.mouse.click(vp.width / 2, vp.height / 2);
   await page.waitForFunction(() => (window as any).__vr?.screen === 'run', null, { timeout: 30_000 });
-  expect(await page.evaluate(() => (window as any).__vr.baseSpeed)).toBeCloseTo(58 / 3.6, 2);
+  expect(await page.evaluate(() => (window as any).__vr.baseSpeed)).toBeCloseTo(110 / 3.6, 2);
 
   // Settings survive a reload.
   await page.reload();
   await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
-  expect(await page.evaluate(() => (window as any).__vr.baseSpeed)).toBeCloseTo(58 / 3.6, 2);
+  expect(await page.evaluate(() => (window as any).__vr.baseSpeed)).toBeCloseTo(110 / 3.6, 2);
   expect(errors).toEqual([]);
 });
 

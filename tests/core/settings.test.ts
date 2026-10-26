@@ -5,22 +5,23 @@ import { Run } from '../../src/core/run';
 import {
   applyPreset, buildConfig, defaultSettings, detectPreset, featuresOf, fromShareCode, sanitize, toShareCode, validate, warnings,
 } from '../../src/core/settings';
-import { generateItems } from '../../src/core/spawner';
+import { generateItems, timeAt } from '../../src/core/spawner';
 
 describe('defaults', () => {
   it("are the booth's tuned round", () => {
     const cfg = buildConfig(defaultSettings());
     expect(cfg.baseSpeed).toBeCloseTo(90 / 3.6);
     expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(150 / 3.6);
-    expect(cfg.runLength).toBe(1500);
-    expect(cfg.spawn).toMatchObject({ obstacles: 50, treats: 75, mode: 'fixed' });
+    expect(cfg.runLength).toBe(1468);
+    expect(cfg.spawn).toMatchObject({ obstacles: 80, treats: 65, mode: 'fixed' });
     expect(cfg.questions).toMatchObject({ enabled: true, points: { 1: 15, 2: 20 }, timeLimit: 10 });
     for (const [k, v] of Object.entries(CONFIG.items)) expect(cfg.items[k as keyof typeof CONFIG.items].points).toBe(v.points);
     expect(warnings(defaultSettings())).toEqual([]);
   });
-  it('start Custom with gifts off, questions and leaderboard on, PIN 2468, board "booth"', () => {
+  it('start on Normal with gifts off, questions and leaderboard on, PIN 2468, board "booth"', () => {
     const s = defaultSettings();
-    expect(s.preset).toBe('custom');
+    expect(s.preset).toBe('normal');
+    expect(detectPreset(s)).toBe('normal');
     expect(featuresOf(s)).toEqual({ showGifts: false, leaderboard: true });
     expect(s.questions).toEqual({ enabled: true, level1Points: 15, level2Points: 20, timeLimit: 10 });
     expect(s.pin).toBe('2468');
@@ -32,7 +33,8 @@ describe('defaults', () => {
 describe('presets', () => {
   it('fill the difficulty values', () => {
     const hard = applyPreset(defaultSettings(), 'hard');
-    expect(hard).toMatchObject({ preset: 'hard', startSpeedKmh: 58, endSpeedKmh: 76, obstacles: 16, treats: 28 });
+    expect(hard).toMatchObject({ preset: 'hard', roundSeconds: 45, startSpeedKmh: 110, endSpeedKmh: 170, obstacles: 80, treats: 65 });
+    expect(applyPreset(defaultSettings(), 'easy')).toMatchObject({ roundSeconds: 45, startSpeedKmh: 70, endSpeedKmh: 110, obstacles: 50, treats: 65 });
   });
   it('turn into Custom once a value is edited', () => {
     const s = { ...applyPreset(defaultSettings(), 'easy'), obstacles: 9 };
@@ -162,15 +164,20 @@ describe('share codes', () => {
 });
 
 describe('warnings', () => {
-  it('say nothing for the presets', () => {
-    for (const p of ['easy', 'normal', 'hard'] as const) expect(warnings(applyPreset(defaultSettings(), p))).toEqual([]);
+  it('say nothing for the presets, and every preset lasts its 45 s', () => {
+    for (const p of ['easy', 'normal', 'hard'] as const) {
+      const s = applyPreset(defaultSettings(), p);
+      expect(warnings(s)).toEqual([]);
+      expect(timeAt(buildConfig(s), buildConfig(s).runLength)).toBeCloseTo(45, 1);
+    }
   });
   it('explain when a short, slow round cannot fit the rewards', () => {
     const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 });
-    expect(w.join(' ')).toMatch(/about \d+ of 31 rewards fit/);
+    expect(w.join(' ')).toMatch(/about \d+ of 65 rewards fit/);
   });
   it('explain when too many items are asked for', () => {
-    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), obstacles: 40, treats: 80 });
-    expect(w.join(' ')).toMatch(/of 80 rewards fit/);
+    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 20 });
+    expect(w.join(' ')).toMatch(/of 80 obstacles fit/);
+    expect(w.join(' ')).toMatch(/of 65 rewards fit/);
   });
 });

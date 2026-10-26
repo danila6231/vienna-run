@@ -42,15 +42,16 @@ export interface Features {
 type Difficulty = Pick<Settings, 'roundSeconds' | 'startSpeedKmh' | 'endSpeedKmh' | 'mode' | 'obstacles' | 'treats'>;
 const DIFFICULTY_KEYS: ReadonlyArray<keyof Difficulty> = ['roundSeconds', 'startSpeedKmh', 'endSpeedKmh', 'mode', 'obstacles', 'treats'];
 
+/** Normal is the booth's round (its share code of 2026-10-26); all three keep the same 45 s and 65 rewards. */
 export const PRESETS: Record<Exclude<Preset, 'custom'>, Difficulty> = {
-  easy: { roundSeconds: 38, startSpeedKmh: 40, endSpeedKmh: 50, mode: 'random', obstacles: 7, treats: 34 },
-  normal: { roundSeconds: 38, startSpeedKmh: 50, endSpeedKmh: 63, mode: 'random', obstacles: 11, treats: 31 },
-  hard: { roundSeconds: 38, startSpeedKmh: 58, endSpeedKmh: 76, mode: 'random', obstacles: 16, treats: 28 },
+  easy: { roundSeconds: 45, startSpeedKmh: 70, endSpeedKmh: 110, mode: 'fixed', obstacles: 50, treats: 65 },
+  normal: { roundSeconds: 45, startSpeedKmh: 90, endSpeedKmh: 150, mode: 'fixed', obstacles: 80, treats: 65 },
+  hard: { roundSeconds: 45, startSpeedKmh: 110, endSpeedKmh: 170, mode: 'fixed', obstacles: 80, treats: 65 },
 };
 
 export const LIMITS = {
   roundSeconds: [20, 90],
-  startSpeedKmh: [30, 90],
+  startSpeedKmh: [30, 120],
   endSpeedKmh: [30, 170],
   obstacles: [0, 80],
   treats: [5, 80],
@@ -70,14 +71,8 @@ const RENAMED: Record<string, ItemType> = { sacher: 'piano', kipferl: 'violin', 
 export function defaultSettings(): Settings {
   return {
     version: 1,
-    preset: 'custom',
-    // The booth's round: the tuned share code of 2026-10-24, then faster (up to 150 km/h) and busier (50 obstacles).
-    roundSeconds: 45,
-    startSpeedKmh: 90,
-    endSpeedKmh: 150,
-    mode: 'fixed',
-    obstacles: 50,
-    treats: 75,
+    preset: 'normal',
+    ...PRESETS.normal,
     seed: 1,
     points: Object.fromEntries(Object.entries(CONFIG.items).map(([k, v]) => [k, v.points])) as Record<ItemType, number>,
     tiers: CONFIG.tiers.map((t) => ({ ...t })),
@@ -211,7 +206,9 @@ export function warnings(s: Settings): string[] {
 export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig {
   const start = s.startSpeedKmh / 3.6;
   const end = Math.max(start, s.endSpeedKmh / 3.6);
-  const runLength = Math.round((s.roundSeconds * (start + end)) / 2);
+  // The run speeds up evenly with distance (not time), so a round of T seconds covers T·v0·r / ln(1 + r) metres.
+  const ramp = end / start - 1;
+  const runLength = Math.round(ramp > 1e-9 ? (s.roundSeconds * start * ramp) / Math.log(1 + ramp) : s.roundSeconds * start);
   const items = Object.fromEntries(
     Object.entries(base.items).map(([k, v]) => [k, { ...v, points: s.points[k as ItemType] ?? v.points }]),
   ) as GameConfig['items'];
