@@ -66,7 +66,8 @@ export const CONFIG: GameConfig = {
   },
   spawn: { firstAt: 34, finishClear: 36, obstacles: 11, treats: 31, mode: 'random', seed: 1 },
   collision: { ahead: 0.8, behind: 1.0, laneTolerance: 0.5 },
-  trayMax: 6,
+  // More than two rewards stacked above the baton hides the road ahead.
+  trayMax: 2,
   stumbleSeconds: 0.5,
   questions: {
     enabled: true,

@@ -40,17 +40,26 @@ describe('boardList', () => {
 });
 
 describe('start screen leaderboard', () => {
-  it("shows today's top 10 beside the title card, with a button for the full board", () => {
-    const open = vi.fn();
-    const s = new AttractScreen(document.body, new I18n('en'), icons, null, open);
+  it("shows today's top 10 and the all-time top 10 beside the title card", () => {
+    const s = new AttractScreen(document.body, new I18n('en'), icons, null);
     s.configure(CONFIG, { showGifts: false, leaderboard: true });
-    s.setBoard({ rows, state: 'ok' });
+    s.setBoard({ today: rows.slice(0, 1), all: rows, state: 'ok' });
     expect(s.root.classList.contains('with-board')).toBe(true);
-    expect(s.root.querySelector('.board-panel')?.textContent).toContain('Anna');
-    const button = s.root.querySelector<HTMLButtonElement>('.board-open')!;
-    expect(button.tagName).toBe('BUTTON');
-    button.click();
-    expect(open).toHaveBeenCalledTimes(1);
+    const [today, all] = [...s.root.querySelectorAll('.board-section')];
+    expect(today.querySelector('h2')?.textContent).toBe("Today's top 10");
+    expect(today.querySelectorAll('li')).toHaveLength(1);
+    expect(all.querySelector('h2')?.textContent).toBe('All-time top 10');
+    expect([...all.querySelectorAll('.board-name')].map((n) => n.textContent)).toEqual(['Anna', '<b>Bo</b>']);
+    expect(s.root.querySelector('.board-open')).toBeNull();
+  });
+  it('invites the first player separately on each empty list, in Vietnamese by default', () => {
+    const s = new AttractScreen(document.body, new I18n(), icons, null);
+    s.setBoard({ today: [], all: rows, state: 'ok' });
+    const [today, all] = [...s.root.querySelectorAll('.board-section')];
+    expect(today.textContent).toContain('Top 10 hôm nay');
+    expect(today.textContent).toContain('Hãy là người đầu tiên!');
+    expect(all.textContent).toContain('Top 10 mọi thời đại');
+    expect(all.textContent).toContain('Anna');
   });
   it('hides the panel and centres the card when the leaderboard is off', () => {
     const s = new AttractScreen(document.body, new I18n('en'), icons, null);
@@ -60,10 +69,11 @@ describe('start screen leaderboard', () => {
   });
   it('says when the board is offline or unavailable', () => {
     const s = new AttractScreen(document.body, new I18n('vi'), icons, null);
-    s.setBoard({ rows, state: 'offline' });
+    s.setBoard({ today: rows, all: rows, state: 'offline' });
     expect(s.root.textContent).toContain('Đang ngoại tuyến');
-    s.setBoard({ rows: [], state: 'unavailable' });
+    s.setBoard({ today: [], all: [], state: 'unavailable' });
     expect(s.root.textContent).toContain('Bảng xếp hạng tạm thời không khả dụng');
+    expect(s.root.querySelectorAll('.board-section')).toHaveLength(0);
   });
 });
 

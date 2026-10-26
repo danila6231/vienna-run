@@ -9,7 +9,8 @@ import { formatPoints, itemLabel } from './labels';
 
 /** What the start-screen panel shows; null hides it (leaderboard switched off). */
 export interface BoardView {
-  rows: BoardRow[];
+  today: BoardRow[];
+  all: BoardRow[];
   state: 'ok' | 'offline' | 'unavailable';
 }
 
@@ -24,13 +25,11 @@ export class AttractScreen {
   private cfg: GameConfig | null = null;
   private features: Features = { showGifts: false, leaderboard: false };
   private boardPanel = el('div', 'paper-card board-panel');
-  private boardTitle = el('h2');
   private boardBody = el('div', 'board-body');
   private boardNote = el('p', 'board-note');
-  private boardButton = el('button', 'board-open');
   private board: BoardView | null = null;
 
-  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly icons: Record<RoadType, string>, logoUrl: string | null, onOpenBoard?: () => void) {
+  constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly icons: Record<RoadType, string>, logoUrl: string | null) {
     if (logoUrl) {
       const logo = el('img', 'logo');
       logo.src = logoUrl;
@@ -50,10 +49,8 @@ export class AttractScreen {
       this.pill.append(s);
     }
     this.pill.addEventListener('click', () => i18n.set(i18n.lang === 'vi' ? 'en' : 'vi'));
-    this.boardButton.type = 'button';
-    this.boardButton.addEventListener('click', () => onOpenBoard?.());
     this.boardPanel.hidden = true;
-    this.boardPanel.append(this.boardTitle, this.boardBody, this.boardNote, this.boardButton);
+    this.boardPanel.append(this.boardBody, this.boardNote);
     this.root.append(this.card, this.boardPanel, this.pill);
     this.root.hidden = true;
     parent.append(this.root);
@@ -68,7 +65,7 @@ export class AttractScreen {
     this.render();
   }
 
-  /** Today's top 10 beside the title card, or null to hide the panel (leaderboard switched off). */
+  /** Today's and the all-time top 10 beside the title card, or null to hide the panel (leaderboard switched off). */
   setBoard(view: BoardView | null): void {
     this.board = view;
     this.renderBoard();
@@ -127,9 +124,16 @@ export class AttractScreen {
     this.root.classList.toggle('with-board', view !== null);
     this.boardPanel.hidden = view === null;
     if (!view) return;
-    this.boardTitle.textContent = i18n.t('board.todayTop');
-    this.boardBody.replaceChildren(view.state === 'unavailable' ? el('p', 'board-empty', i18n.t('board.unavailable')) : boardList(view.rows, i18n));
+    const section = (title: string, rows: BoardRow[]) => {
+      const s = el('section', 'board-section');
+      s.append(el('h2', '', title), boardList(rows, i18n));
+      return s;
+    };
+    this.boardBody.replaceChildren(
+      ...(view.state === 'unavailable'
+        ? [el('p', 'board-empty', i18n.t('board.unavailable'))]
+        : [section(i18n.t('board.todayTop'), view.today), section(i18n.t('board.allTop'), view.all)]),
+    );
     this.boardNote.textContent = view.state === 'offline' ? i18n.t('board.offline') : '';
-    this.boardButton.textContent = i18n.t('board.open');
   }
 }

@@ -59,7 +59,8 @@ The other Vietnamese texts were machine-written: **have a native speaker review 
 
 ## Leaderboard
 Players can save a code name (A–Z, 0–9, up to 12 characters) on the results screen. The start screen
-shows today's top 10; the **Bảng xếp hạng** button opens Today / All time.
+shows today's top 10 and the all-time top 10 side by side with the title card; "See the leaderboard" on the
+results screen opens the same lists with the player's own row highlighted.
 
 - **Offline first:** every round is saved on the device, then uploaded to Supabase in the background.
   With no internet the game plays normally, the board shows the last downloaded copy plus this

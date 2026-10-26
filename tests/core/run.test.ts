@@ -45,6 +45,13 @@ describe('Run', () => {
     expect(run.items[0].state).toBe('taken');
   });
 
+  it('holds at most two rewards above the baton, keeping the latest', () => {
+    const run = new Run({ seed: 1, items: [mk(5, 0, 'piano'), mk(10, 0, 'violin'), mk(15, 0, 'notes')] });
+    advance(run, 1.5);
+    expect(run.tray).toEqual(['violin', 'notes']);
+    expect(run.score).toBe(30);
+  });
+
   it('ignores items in other lanes', () => {
     const run = new Run({ seed: 1, items: [mk(5, 1, 'piano')] });
     advance(run, 1);

@@ -24,15 +24,10 @@ test('a player saves a code name and sees it on the start screen', async ({ page
   await page.locator('.r-save').click();
   await expect(page.locator('.r-name-msg')).toHaveText('Bạn đứng thứ #1 hôm nay!');
   await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
-  await expect(page.locator('.board-panel')).toContainText('Anna');
-  await page.locator('.board-open').click();
-  await expect(page.locator('.board-modal')).toBeVisible();
-  // A key press (physical keyboard at the booth) must not start a round hidden under the open leaderboard.
-  await page.locator('.board-close').focus();
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.keyboard.press('Space');
-  await page.waitForTimeout(500);
-  expect(await page.evaluate(() => (window as any).__vr.screen)).toBe('attract');
+  // Both lists are on the start screen: today's and the all-time top 10.
+  await expect(page.locator('.board-section')).toHaveCount(2);
+  await expect(page.locator('.board-section').nth(0)).toContainText('Anna');
+  await expect(page.locator('.board-section').nth(1)).toContainText('Anna');
 });
 
 test('a score saved offline uploads exactly once when the connection returns', async ({ page }) => {

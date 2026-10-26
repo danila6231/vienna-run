@@ -69,6 +69,14 @@ body.hide-cursor, body.hide-cursor * { cursor: none !important; }
 .attract.with-board .attract-card { width: min(60cqw, 104cqmin); }
 .board-panel { width: min(30cqw, 58cqmin); padding: 3cqmin 3cqmin 2.6cqmin; display: grid; gap: 1.4cqmin; }
 .board-panel h2, .board-card h2 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 4cqmin; text-align: center; }
+/* The start screen stacks two compact lists (today, all time) so twenty rows fit beside the title card. */
+.board-body { display: grid; gap: 1.8cqmin; }
+.board-section { display: grid; gap: 0.8cqmin; }
+.board-panel { padding-block: 2.4cqmin; }
+.board-panel h2 { font-size: 3cqmin; }
+.board-panel .board-list { font-size: 2cqmin; gap: 0.3cqmin; }
+.board-panel .board-list li { padding: 0.2cqmin 1.1cqmin; }
+.board-panel .board-empty { margin: 0.4cqmin 0; font-size: 2.4cqmin; }
 .board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5cqmin; font-size: 2.5cqmin; }
 .board-list li { display: grid; grid-template-columns: 4.5cqmin 1fr auto; align-items: baseline; gap: 1.2cqmin; padding: 0.6cqmin 1.2cqmin; border-radius: 0.5cqmin; background: var(--paper-2); }
 .board-list li:nth-child(-n + 3) .board-rank { color: var(--red); }

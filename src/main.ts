@@ -122,7 +122,7 @@ async function boot(): Promise<void> {
   const ui = {
     hud: new Hud(stage, i18n),
     fx: new Fx(stage),
-    attract: new AttractScreen(stage, i18n, icons, art.url('logo'), () => boardModal.open('today')),
+    attract: new AttractScreen(stage, i18n, icons, art.url('logo')),
     howto: new HowtoScreen(stage, i18n),
     question: new QuestionScreen(stage, i18n),
     results: new ResultsScreen(stage, i18n, CONFIG.flow.holdSeconds * 1000, {
@@ -136,7 +136,8 @@ async function boot(): Promise<void> {
       return;
     }
     const view: BoardView = {
-      rows: scores.top('today', 10),
+      today: scores.top('today', 10),
+      all: scores.top('all', 10),
       state: !scores.available ? 'unavailable' : scores.status().mode === 'offline' ? 'offline' : 'ok',
     };
     ui.attract.setBoard(view);
