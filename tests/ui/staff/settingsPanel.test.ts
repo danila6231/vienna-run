@@ -138,7 +138,7 @@ describe('SettingsPanel', () => {
     const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false });
     click(root, 'Reset to defaults');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 40, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'custom', obstacles: 50, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false }));
   });
   it('loads a share code, and rejects a bad one without changing anything', () => {
     const { root } = setup();

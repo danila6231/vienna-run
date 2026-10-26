@@ -1,73 +1,107 @@
-import { describe, expect, it, vi } from 'vitest';
-import { startMusic } from '../../src/app/music';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { soundSpan, startMusic, type MusicContext } from '../../src/app/music';
 
-/** A stand-in for an <audio> element; `allowed` says whether the browser lets it play right now. */
-function fakeAudio(allowed: { now: boolean }) {
-  const el = {
-    loop: false,
-    volume: 1,
-    paused: true,
-    play: vi.fn(() => {
-      if (!allowed.now) return Promise.reject(new DOMException('needs a tap', 'NotAllowedError'));
-      el.paused = false;
-      return Promise.resolve();
-    }),
-    pause: vi.fn(() => {
-      el.paused = true;
-    }),
-  };
-  return el;
+/** A decoded track at 1 kHz: `lead` s of silence, `sound` s of tone, `tail` s of silence. */
+function track(lead: number, sound: number, tail: number) {
+  const rate = 1000;
+  const length = Math.round((lead + sound + tail) * rate);
+  const ch = new Float32Array(length);
+  for (let i = Math.round(lead * rate); i < Math.round((lead + sound) * rate); i++) ch[i] = 0.3 * Math.sin(i);
+  return { sampleRate: rate, length, numberOfChannels: 2, duration: length / rate, getChannelData: () => ch };
 }
+
+/** A stand-in AudioContext; `allowed` says whether the browser lets it run right now. */
+function fakeContext(allowed: { now: boolean }, decoded: Promise<unknown> = Promise.resolve(track(0.85, 7, 2.15))) {
+  const source = { buffer: null as unknown, loop: false, loopStart: 0, loopEnd: 0, connect: vi.fn(), start: vi.fn() };
+  const gain = { gain: { value: 1 }, connect: vi.fn() };
+  const ctx = {
+    state: 'suspended',
+    destination: {},
+    resume: vi.fn(async () => {
+      if (allowed.now) ctx.state = 'running';
+    }),
+    suspend: vi.fn(async () => {
+      ctx.state = 'suspended';
+    }),
+    decodeAudioData: vi.fn(() => decoded),
+    createBufferSource: () => source,
+    createGain: () => gain,
+  };
+  return { ctx: ctx as unknown as MusicContext & { state: string }, source, gain };
+}
+const load = () => Promise.resolve(new ArrayBuffer(8));
 const settle = () => new Promise((r) => setTimeout(r, 0));
 const tap = (target: EventTarget) => target.dispatchEvent(new Event('pointerup'));
 
 describe('background music', () => {
-  it('plays the track on a loop straight away when the browser allows sound', async () => {
-    const el = fakeAudio({ now: true });
-    startMusic(el, true, new EventTarget());
+  afterEach(() => vi.restoreAllMocks());
+
+  it('loops only the part with sound, skipping the silence at both ends of the recording', async () => {
+    const { ctx, source, gain } = fakeContext({ now: true });
+    startMusic(ctx, load, true, new EventTarget());
     await settle();
-    expect(el.loop).toBe(true);
-    expect(el.volume).toBeLessThan(1);
-    expect(el.paused).toBe(false);
+    expect(source.loop).toBe(true);
+    expect(source.loopStart).toBeCloseTo(0.84, 2);
+    expect(source.loopEnd).toBeCloseTo(7.85, 2);
+    expect(source.start).toHaveBeenCalledWith(0, source.loopStart);
+    expect(gain.gain.value).toBeLessThan(1);
+  });
+  it('plays straight away when the browser allows sound', async () => {
+    const { ctx } = fakeContext({ now: true });
+    startMusic(ctx, load, true, new EventTarget());
+    await settle();
+    expect(ctx.state).toBe('running');
   });
   it('waits for the first tap when the browser blocks sound until then', async () => {
     const allowed = { now: false };
-    const el = fakeAudio(allowed);
+    const { ctx } = fakeContext(allowed);
     const page = new EventTarget();
-    startMusic(el, true, page);
+    startMusic(ctx, load, true, page);
     await settle();
-    expect(el.paused).toBe(true);
+    expect(ctx.state).toBe('suspended');
     allowed.now = true;
     tap(page);
     await settle();
-    expect(el.paused).toBe(false);
-    const calls = el.play.mock.calls.length;
+    expect(ctx.state).toBe('running');
+    const calls = (ctx.resume as ReturnType<typeof vi.fn>).mock.calls.length;
     tap(page);
-    expect(el.play).toHaveBeenCalledTimes(calls);
+    expect(ctx.resume).toHaveBeenCalledTimes(calls);
   });
   it('mutes and unmutes', async () => {
-    const el = fakeAudio({ now: true });
-    const music = startMusic(el, true, new EventTarget());
+    const { ctx } = fakeContext({ now: true });
+    const music = startMusic(ctx, load, true, new EventTarget());
     await settle();
     music.setEnabled(false);
-    expect(el.paused).toBe(true);
+    await settle();
+    expect(ctx.state).toBe('suspended');
     music.setEnabled(true);
     await settle();
-    expect(el.paused).toBe(false);
+    expect(ctx.state).toBe('running');
   });
   it('stays silent when muted, even after a tap', async () => {
-    const allowed = { now: false };
-    const el = fakeAudio(allowed);
+    const { ctx } = fakeContext({ now: true });
     const page = new EventTarget();
-    const music = startMusic(el, true, page);
-    await settle();
-    music.setEnabled(false);
-    allowed.now = true;
+    startMusic(ctx, load, false, page);
     tap(page);
     await settle();
-    expect(el.paused).toBe(true);
-    startMusic(fakeAudio({ now: true }), false, page);
+    expect(ctx.state).toBe('suspended');
+    expect(ctx.resume).not.toHaveBeenCalled();
+  });
+  it('keeps the game going when the track cannot be decoded', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { ctx, source } = fakeContext({ now: true }, Promise.reject(new Error('no AAC decoder')));
+    expect(() => startMusic(ctx, load, true, new EventTarget())).not.toThrow();
     await settle();
-    expect(el.play).toHaveBeenCalledTimes(1);
+    expect(source.start).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe('soundSpan', () => {
+  it('finds where the sound starts and ends, and keeps a silent-free track whole', () => {
+    expect(soundSpan(track(0.85, 7, 2.15))).toEqual({ start: expect.closeTo(0.84, 2), end: expect.closeTo(7.85, 2) });
+    const full = track(0, 5, 0);
+    expect(soundSpan(full).start).toBe(0);
+    expect(soundSpan(full).end).toBeCloseTo(5, 2);
   });
 });

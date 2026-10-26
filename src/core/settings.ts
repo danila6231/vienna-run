@@ -51,8 +51,8 @@ export const PRESETS: Record<Exclude<Preset, 'custom'>, Difficulty> = {
 export const LIMITS = {
   roundSeconds: [20, 90],
   startSpeedKmh: [30, 90],
-  endSpeedKmh: [30, 110],
-  obstacles: [0, 40],
+  endSpeedKmh: [30, 170],
+  obstacles: [0, 80],
   treats: [5, 80],
   seed: [1, 9999],
   goodPoints: [1, 50],
@@ -71,12 +71,12 @@ export function defaultSettings(): Settings {
   return {
     version: 1,
     preset: 'custom',
-    // The booth's tuned round (its share code, 2026-10-24): faster and busier than Hard, the same counts for everyone.
+    // The booth's round: the tuned share code of 2026-10-24, then faster (up to 150 km/h) and busier (50 obstacles).
     roundSeconds: 45,
     startSpeedKmh: 90,
-    endSpeedKmh: 110,
+    endSpeedKmh: 150,
     mode: 'fixed',
-    obstacles: 40,
+    obstacles: 50,
     treats: 75,
     seed: 1,
     points: Object.fromEntries(Object.entries(CONFIG.items).map(([k, v]) => [k, v.points])) as Record<ItemType, number>,

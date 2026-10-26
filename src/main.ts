@@ -9,7 +9,7 @@ import { Game } from './app/game';
 import { installKiosk } from './app/kiosk';
 import { FixedStepper, startLoop, type Loop } from './app/loop';
 import { parseParams } from './app/params';
-import { startMusic } from './app/music';
+import { startMusic, type Music } from './app/music';
 import { loadSettings, saveSettings } from './app/settingsStore';
 import { readJson, safeLocalStorage, writeJson } from './app/storage';
 import { applyUpdateIfReady, setupUpdates } from './app/updates';
@@ -103,7 +103,11 @@ async function boot(): Promise<void> {
   }
 
   // Background music on a loop (not on the self-check screen); staff can mute it per device.
-  const music = startMusic(new Audio(habaneraUrl), settings.sound, document);
+  // A browser without Web Audio still runs the game, silently.
+  const music: Music =
+    typeof AudioContext === 'function'
+      ? startMusic(new AudioContext(), () => fetch(habaneraUrl).then((r) => r.arrayBuffer()), settings.sound, document)
+      : { setEnabled: () => undefined };
 
   // Leaderboard: kept on this device first; uploaded to Supabase when the hosted build has its details.
   // Autoplay (bot) rounds never touch it beyond the device, and the USB copy has no details at all.

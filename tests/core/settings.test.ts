@@ -11,9 +11,9 @@ describe('defaults', () => {
   it("are the booth's tuned round", () => {
     const cfg = buildConfig(defaultSettings());
     expect(cfg.baseSpeed).toBeCloseTo(90 / 3.6);
-    expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(110 / 3.6);
-    expect(cfg.runLength).toBe(1250);
-    expect(cfg.spawn).toMatchObject({ obstacles: 40, treats: 75, mode: 'fixed' });
+    expect(cfg.baseSpeed * (1 + cfg.speedRamp)).toBeCloseTo(150 / 3.6);
+    expect(cfg.runLength).toBe(1500);
+    expect(cfg.spawn).toMatchObject({ obstacles: 50, treats: 75, mode: 'fixed' });
     expect(cfg.questions).toMatchObject({ enabled: true, points: { 1: 15, 2: 20 }, timeLimit: 10 });
     for (const [k, v] of Object.entries(CONFIG.items)) expect(cfg.items[k as keyof typeof CONFIG.items].points).toBe(v.points);
     expect(warnings(defaultSettings())).toEqual([]);

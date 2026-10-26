@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG, type GameConfig } from '../../src/config';
 import { createRng } from '../../src/core/rng';
 import { buildConfig, defaultSettings } from '../../src/core/settings';
-import { generateItems, layoutSeed, ROW_CLEAR } from '../../src/core/spawner';
+import { generateItems, layoutSeed, PACE, ROW_CLEAR } from '../../src/core/spawner';
 import { isGood, type Item } from '../../src/core/types';
 
 const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -84,6 +84,66 @@ describe('generateItems', () => {
       expect(bad(items).length).toBeLessThanOrEqual(40);
       const groups = obstacleGroups(items);
       for (let i = 1; i < groups.length; i++) expect(groups[i][0].at - groups[i - 1][0].at).toBeGreaterThan(9);
+    }
+  });
+});
+
+describe('pace', () => {
+  const booth = buildConfig(defaultSettings());
+  const boothRun = (seed: number) => generateItems(createRng(seed), booth);
+  /** Seconds from the start line to `d`, with the speed ramping up along the route. */
+  const timeAt = (cfg: GameConfig, d: number) => {
+    let t = 0;
+    for (let x = 0; x < d; x += 0.5) t += 0.5 / (cfg.baseSpeed * (1 + cfg.speedRamp * (x / cfg.runLength)));
+    return t;
+  };
+
+  it.each([['booth', booth], ['default', CONFIG], ['busy', withSpawn({ mode: 'fixed', obstacles: 30, treats: 80 })]])('never puts more than three rewards in a row in one lane (%s)', (_name, cfg) => {
+    for (const s of seeds.slice(0, 60)) {
+      const rewards = good(generateItems(createRng(s), cfg));
+      let streak = 1;
+      for (let i = 1; i < rewards.length; i++) {
+        streak = rewards[i].lane === rewards[i - 1].lane ? streak + 1 : 1;
+        expect(streak).toBeLessThanOrEqual(PACE.maxLine);
+      }
+    }
+  });
+  it('starts gently: only single obstacles in the first seconds', () => {
+    for (const s of seeds.slice(0, 40)) {
+      for (const g of obstacleGroups(boothRun(s))) if (g[0].at < PACE.gentleSeconds * booth.baseSpeed) expect(g).toHaveLength(1);
+    }
+  });
+  it('blocks two lanes in about half the obstacle patterns', () => {
+    const groups = seeds.slice(0, 40).flatMap((s) => obstacleGroups(boothRun(s)));
+    const share = groups.filter((g) => g.length === 2).length / groups.length;
+    expect(share).toBeGreaterThan(0.4);
+    expect(share).toBeLessThan(0.6);
+  });
+  it('never asks for a lane change between obstacles too close to change lanes in time', () => {
+    for (const s of seeds.slice(0, 60)) {
+      const groups = obstacleGroups(boothRun(s));
+      for (let i = 1; i < groups.length; i++) {
+        if (timeAt(booth, groups[i][0].at) - timeAt(booth, groups[i - 1][0].at) >= PACE.moveSeconds) continue;
+        const open = [-1, 0, 1].filter((l) => !groups[i].some((o) => o.lane === l) && !groups[i - 1].some((o) => o.lane === l));
+        expect(open.length).toBeGreaterThan(0);
+      }
+    }
+  });
+  it('keeps a player who only dodges on the move, with breathers only around the ❓ rows', () => {
+    for (const s of seeds.slice(0, 30)) {
+      const items = boothRun(s);
+      const rows = [...new Set(asks(items).map((i) => timeAt(booth, i.at)))];
+      let lane = 0, moves = 0, since = 0, longest = 0;
+      for (const g of obstacleGroups(items)) {
+        if (!g.some((o) => o.lane === lane)) continue;
+        const t = timeAt(booth, g[0].at);
+        if (since > PACE.gentleSeconds && !rows.some((r) => r > since && r < t)) longest = Math.max(longest, t - since);
+        lane = [-1, 0, 1].filter((l) => !g.some((o) => o.lane === l)).sort((a, b) => Math.abs(a - lane) - Math.abs(b - lane))[0];
+        since = t;
+        moves++;
+      }
+      expect(moves).toBeGreaterThanOrEqual(20);
+      expect(longest).toBeLessThan(5);
     }
   });
 });

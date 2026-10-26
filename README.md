@@ -42,12 +42,14 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
   another device.
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
-defaults (also what **Reset to defaults** restores) are the booth's tuned round: 45 s at 90→110 km/h,
-"Same for everyone" with 40 obstacles and 75 rewards, Krampus −20, bomb −25, questions on.
+defaults (also what **Reset to defaults** restores) are the booth's round: 45 s at 90→150 km/h (up to 170),
+"Same for everyone" with 50 obstacles (up to 80) and 75 rewards, Krampus −20, bomb −25, questions on.
 
 ## Music
 The Habanera from Bizet's *Carmen* (instrumental, London Festival Orchestra; supplied by the booth team) loops
-quietly in the background: `src/assets/audio/habanera.m4a`. Browsers only allow sound after the first tap, so on a
+quietly in the background: `src/assets/audio/habanera.m4a`. It plays through Web Audio and loops only the part
+with sound in it (the recording has ~1 s of silence at the start and ~2 s at the end), so it repeats without a gap,
+Safari included. Browsers only allow sound after the first tap, so on a
 normal browser it starts with the first round; the kiosk launchers allow it from the start screen. Staff mute it in
 settings → Sound.
 
@@ -78,6 +80,11 @@ results screen opens the same lists with the player's own row highlighted.
 - **Points, difficulty, gift tiers:** use the staff settings menu. Defaults: `defaultSettings()` in `src/core/settings.ts` (difficulty, questions) and `src/config.ts` (points, gift tiers); `npm run simulate` shows the score spread for each preset.
 - **Questions:** `src/data/questions.json`, five per level (`"level": 1` or `2`); `answer` is the index of the right
   option. Each player gets one random question per level, with the options shuffled. `npm test` validates the file.
+- **How the street is laid out:** `src/core/spawner.ts`. Items come in patterns (one or two obstacles side by side;
+  three rewards in a line or a zigzag; single rewards), spread evenly, never closer than 0.4 s. `PACE` holds the rules
+  that keep players moving: about half the obstacles leave one way through, the first 8 s only have single obstacles,
+  a lane left clear for 1.5 s gets the next obstacle, the escape lane moves on after two obstacles (at most one lane
+  at a time), most rewards lead into the next escape lane, and never more than three rewards in a row in one lane.
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
 - **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/` (the paper cards remain as the
