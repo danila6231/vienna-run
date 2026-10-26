@@ -84,6 +84,12 @@ describe('SettingsPanel', () => {
     type(field(root, 'Obstacles per round'), '11');
     expect(root.querySelector('.st-warnings')?.textContent).toBe('');
   });
+  it('changes the layout seed', () => {
+    const { root, onSave } = setup();
+    click(root, 'Layout seed up');
+    click(root, 'Save');
+    expect(onSave.mock.calls[0][0]).toMatchObject({ seed: 2, preset: 'normal' });
+  });
   it('switches bonus questions off', () => {
     const { root, onSave } = setup();
     click(root, 'Bonus questions');

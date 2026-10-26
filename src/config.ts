@@ -15,7 +15,8 @@ export interface GameConfig {
   speedRamp: number;
   items: Record<ItemType, { points: number; good: boolean }>;
   /** Item layout: exact counts in 'fixed' mode, targets that vary ±35% per round in 'random' mode. */
-  spawn: { firstAt: number; finishClear: number; obstacles: number; treats: number; mode: 'random' | 'fixed' };
+  /** `seed` picks the street in 'fixed' mode (see layoutSeed in core/spawner.ts). */
+  spawn: { firstAt: number; finishClear: number; obstacles: number; treats: number; mode: 'random' | 'fixed'; seed: number };
   collision: { ahead: number; behind: number; laneTolerance: number };
   trayMax: number;
   stumbleSeconds: number;
@@ -59,7 +60,7 @@ export const CONFIG: GameConfig = {
     krampus: { points: -20, good: false },
     bomb: { points: -25, good: false },
   },
-  spawn: { firstAt: 34, finishClear: 36, obstacles: 11, treats: 31, mode: 'random' },
+  spawn: { firstAt: 34, finishClear: 36, obstacles: 11, treats: 31, mode: 'random', seed: 1 },
   collision: { ahead: 0.8, behind: 1.0, laneTolerance: 0.5 },
   trayMax: 6,
   stumbleSeconds: 0.5,

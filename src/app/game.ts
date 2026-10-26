@@ -3,6 +3,7 @@ import { Bot, BOT_SKILLS } from '../core/bot';
 import { pickQuestions, updateRecent } from '../core/questions';
 import { createRng, randomSeed } from '../core/rng';
 import { Run } from '../core/run';
+import { layoutSeed } from '../core/spawner';
 import { tierIndex } from '../core/scoring';
 import type { Features } from '../core/settings';
 import type { Lang, Question, RunEvent } from '../core/types';
@@ -197,7 +198,9 @@ export class Game {
   }
 
   private newRun(): Run {
-    const run = new Run({ seed: this.seed++, config: this.cfg });
+    // "Same for everyone": the street comes from the settings alone; the round seed still moves on for the bots and questions.
+    const seed = this.seed++;
+    const run = new Run({ seed: this.cfg.spawn.mode === 'fixed' ? layoutSeed(this.cfg) : seed, config: this.cfg });
     this.o.world.reset();
     return run;
   }

@@ -95,6 +95,16 @@ describe('sanitize', () => {
     expect(sanitize({ ...defaultSettings(), mode: 'zigzag' }).mode).toBe('fixed');
     expect(sanitize({ ...defaultSettings(), mode: 'random' }).mode).toBe('random');
   });
+  it('keeps a whole-number layout seed in range, starting at 1', () => {
+    expect(defaultSettings().seed).toBe(1);
+    expect(sanitize({ ...defaultSettings(), seed: 42.4 }).seed).toBe(42);
+    expect(sanitize({ ...defaultSettings(), seed: 1e9 }).seed).toBe(9999);
+    expect(sanitize({ ...defaultSettings(), seed: 'x' }).seed).toBe(1);
+    expect(buildConfig({ ...defaultSettings(), seed: 7 }).spawn.seed).toBe(7);
+  });
+  it('keeps the layout seed when a preset is picked', () => {
+    expect(applyPreset({ ...defaultSettings(), seed: 5 }, 'hard').seed).toBe(5);
+  });
   it('carries points saved under the old treat names over to the music rewards', () => {
     const old = { ...defaultSettings(), points: { sacher: 30, kipferl: 20, melange: 8, mozart: 4, krampus: -20, bomb: -25 } };
     expect(sanitize(old).points).toEqual({ piano: 30, violin: 20, sheet: 8, notes: 4, krampus: -20, bomb: -25 });

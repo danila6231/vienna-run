@@ -14,7 +14,8 @@ const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
 
 /**
  * Lays out every item for one run, front to back. Same seed, same layout.
- * 'fixed' mode places exactly `spawn.obstacles` obstacles and `spawn.treats` treats (only positions vary);
+ * 'fixed' mode places exactly `spawn.obstacles` obstacles and `spawn.treats` treats (run it with `layoutSeed`
+ * so their places match too);
  * 'random' mode first draws this round's counts within ±35% of those targets.
  * Never blocks all three lanes, keeps the start and the finish clear, and thins out crowded settings.
  */
@@ -95,4 +96,18 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
     }
   });
   return items.sort((a, b) => a.at - b.at);
+}
+
+/**
+ * The seed for 'fixed' mode: a hash of the staff's layout seed and every setting that shapes a run (route length,
+ * item counts and clear stretches, question timing; round length and speeds set these), so every round on every
+ * device with the same settings plays the same street. Points and prizes don't move anything, so they leave it alone.
+ */
+export function layoutSeed(cfg: GameConfig): number {
+  const { runLength, spawn: s, questions: q } = cfg;
+  const key = JSON.stringify([s.seed, runLength, s.firstAt, s.finishClear, s.obstacles, s.treats, q.perRun, q.windowStart, q.windowEnd, q.minGap]);
+  // FNV-1a
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193);
+  return h >>> 0;
 }

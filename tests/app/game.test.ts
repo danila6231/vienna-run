@@ -77,6 +77,48 @@ describe('Game', () => {
     expect(backToAttract! - resultsAt[0]).toBeGreaterThanOrEqual(CONFIG.flow.resultsFallbackSeconds - 0.1);
   });
 
+  describe('item layout', () => {
+    const layout = (game: Game) =>
+      [...game.run.items.map((it) => `${it.at.toFixed(3)}:${it.lane}:${it.type}`), ...game.run.slots.map((s) => `q${s.toFixed(3)}`)].join(' ');
+    /** The layouts of a player's first two rounds on a device whose random base seed is `seed`. */
+    function rounds(cfg: typeof CONFIG, seed: number): string[] {
+      const { world, ui } = fakes();
+      const game = new Game({ cfg, bank, world, ui, seed });
+      const c = clock(game);
+      const seen: string[] = [];
+      for (let r = 0; r < 2; r++) {
+        game.press();
+        expect(game.flow.screen).toBe('howto');
+        seen.push(layout(game));
+        c.run(200);
+      }
+      return seen;
+    }
+    const withQuestions = (mode: 'fixed' | 'random') => {
+      const s = defaultSettings();
+      return buildConfig({ ...s, mode, roundSeconds: 45, questions: { ...s.questions, enabled: true } });
+    };
+
+    it('is the same street, questions included, for every round and every device with "Same for everyone"', () => {
+      const one = rounds(withQuestions('fixed'), 1);
+      const other = rounds(withQuestions('fixed'), 987_654);
+      expect(one[1]).toBe(one[0]);
+      expect(other).toEqual(one);
+    });
+    it('changes when a setting that shapes the street changes', () => {
+      const s = defaultSettings();
+      expect(rounds(buildConfig({ ...s, obstacles: s.obstacles - 1 }), 1)[0]).not.toBe(rounds(buildConfig(s), 1)[0]);
+    });
+    it('moves to a different street when staff change the layout seed', () => {
+      const s = defaultSettings();
+      expect(rounds(buildConfig({ ...s, seed: 2 }), 1)[0]).not.toBe(rounds(buildConfig(s), 1)[0]);
+    });
+    it('still differs from round to round with "Random each round"', () => {
+      const [a, b] = rounds(withQuestions('random'), 1);
+      expect(b).not.toBe(a);
+    });
+  });
+
   it('keeps recent questions away from the next players', () => {
     const { world, ui } = fakes();
     let history: string[][] = [];

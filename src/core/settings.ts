@@ -17,6 +17,8 @@ export interface Settings {
   mode: Mode;
   obstacles: number;
   treats: number;
+  /** Picks the street for "Same for everyone"; change it for a different one. */
+  seed: number;
   points: Record<ItemType, number>;
   tiers: Tier[];
   showGifts: boolean;
@@ -49,6 +51,7 @@ export const LIMITS = {
   endSpeedKmh: [30, 110],
   obstacles: [0, 40],
   treats: [5, 80],
+  seed: [1, 9999],
   goodPoints: [1, 50],
   badPoints: [-50, -1],
   tierMin: [0, 999],
@@ -72,6 +75,7 @@ export function defaultSettings(): Settings {
     mode: 'fixed',
     obstacles: 40,
     treats: 75,
+    seed: 1,
     points: Object.fromEntries(Object.entries(CONFIG.items).map(([k, v]) => [k, v.points])) as Record<ItemType, number>,
     tiers: CONFIG.tiers.map((t) => ({ ...t })),
     showGifts: false,
@@ -144,6 +148,7 @@ export function sanitize(raw: unknown): Settings {
     mode: r.mode === 'fixed' || r.mode === 'random' ? r.mode : d.mode,
     obstacles: clamp(r.obstacles, LIMITS.obstacles, d.obstacles),
     treats: clamp(r.treats, LIMITS.treats, d.treats),
+    seed: clamp(r.seed, LIMITS.seed, d.seed),
     points,
     tiers: sanitizeTiers(r.tiers) ?? d.tiers,
     showGifts: typeof r.showGifts === 'boolean' ? r.showGifts : d.showGifts,
@@ -223,7 +228,7 @@ export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig 
     speedRamp: end / start - 1,
     runLength,
     items,
-    spawn: { firstAt: Math.round(start * 2.4), finishClear: Math.round(end * 2.4), obstacles: s.obstacles, treats: s.treats, mode: s.mode },
+    spawn: { firstAt: Math.round(start * 2.4), finishClear: Math.round(end * 2.4), obstacles: s.obstacles, treats: s.treats, mode: s.mode, seed: s.seed },
     questions: { ...base.questions, perRun, windowStart, windowEnd, minGap, timeLimit: s.questions.timeLimit },
     tiers: s.tiers.map((t) => ({ ...t })),
   };

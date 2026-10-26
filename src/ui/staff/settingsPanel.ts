@@ -48,7 +48,8 @@ const difficulty: Section = {
       choice('Item layout', [{ value: 'random', label: 'Random each round' }, { value: 'fixed', label: 'Same for everyone' }] as const, d.mode, (v) => edit((x) => { x.mode = v; })),
       numberField('Obstacles per round', d.obstacles, LIMITS.obstacles, (v) => edit((x) => { x.obstacles = v; })),
       numberField('Rewards per round', d.treats, LIMITS.treats, (v) => edit((x) => { x.treats = v; })),
-      note('Random each round: the counts vary by up to a third either way. Same for everyone: exactly these counts; only their places change.'),
+      numberField('Layout seed', d.seed, LIMITS.seed, (v) => edit((x) => { x.seed = v; })),
+      note('Random each round: the counts vary by up to a third either way, in new places every round. Same for everyone: exactly these counts in the same places, every round and on every device with these settings. Change the layout seed for a different street (Same for everyone only).'),
     );
     return box;
   },

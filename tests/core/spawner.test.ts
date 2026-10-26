@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG, type GameConfig } from '../../src/config';
 import { createRng } from '../../src/core/rng';
-import { generateItems } from '../../src/core/spawner';
+import { buildConfig, defaultSettings } from '../../src/core/settings';
+import { generateItems, layoutSeed } from '../../src/core/spawner';
 import type { Item } from '../../src/core/types';
 
 const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -85,5 +86,17 @@ describe('generateItems', () => {
   });
   it('places enough treats for every question slot', () => {
     for (const s of seeds) expect(good(run(s)).length).toBeGreaterThanOrEqual(14);
+  });
+});
+
+describe('layoutSeed', () => {
+  it('changes only with the layout seed and the settings that shape the street', () => {
+    const s = defaultSettings();
+    const seed = layoutSeed(buildConfig(s));
+    expect(layoutSeed(buildConfig({ ...s, points: { ...s.points, piano: 40 }, tiers: [{ min: 0, name: 'Pen' }] }))).toBe(seed);
+    expect(layoutSeed(buildConfig({ ...s, seed: s.seed + 1 }))).not.toBe(seed);
+    expect(layoutSeed(buildConfig({ ...s, treats: s.treats - 1 }))).not.toBe(seed);
+    expect(layoutSeed(buildConfig({ ...s, roundSeconds: s.roundSeconds + 1 }))).not.toBe(seed);
+    expect(layoutSeed(buildConfig({ ...s, startSpeedKmh: s.startSpeedKmh - 10 }))).not.toBe(seed);
   });
 });

@@ -28,7 +28,9 @@ For now, the **⚙ Settings** button in the top-left corner of the start screen 
 Set `QUICK_SETTINGS = false` in `src/main.ts` to hide it again: staff then **hold the top-left corner
 for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The menu sets:
 - **Difficulty:** Easy / Normal / Hard presets; round length, start and end speed, obstacles and rewards
-  per round; "Random each round" or "Same for everyone".
+  per round; "Random each round" or "Same for everyone" (the same street, item for item, in every round and on
+  every device with the same settings; a share code copies it to another booth). Change the **layout seed**
+  for a different street.
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Bonus questions:** on/off, how many per round, seconds to answer.
 - **Graphics:** the street in **3D** (default) or **Paper (lighter)**, the flat cutout houses and landmarks, as a
