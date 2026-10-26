@@ -3,8 +3,8 @@ import { pick, randRange, shuffle, type Rng } from './rng';
 import { BAD_TYPES, type Item, type ItemType, type Lane } from './types';
 
 const LANES: readonly Lane[] = [-1, 0, 1];
-// Cheap treats appear more often than the Sachertorte.
-const GOOD_WEIGHTED: readonly ItemType[] = ['sacher', 'kipferl', 'kipferl', 'melange', 'melange', 'melange', 'mozart', 'mozart', 'mozart'];
+// Cheap rewards appear more often than the piano.
+const GOOD_WEIGHTED: readonly ItemType[] = ['piano', 'violin', 'violin', 'sheet', 'sheet', 'sheet', 'notes', 'notes', 'notes'];
 /** Closest two patterns may sit, in metres, so every obstacle stays readable and dodgeable. */
 export const MIN_PATTERN_SPACING = 14;
 

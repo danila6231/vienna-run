@@ -47,7 +47,7 @@ const difficulty: Section = {
       numberField('End speed', d.endSpeedKmh, LIMITS.endSpeedKmh, (v) => edit((x) => { x.endSpeedKmh = v; }), 'km/h'),
       choice('Item layout', [{ value: 'random', label: 'Random each round' }, { value: 'fixed', label: 'Same for everyone' }] as const, d.mode, (v) => edit((x) => { x.mode = v; })),
       numberField('Obstacles per round', d.obstacles, LIMITS.obstacles, (v) => edit((x) => { x.obstacles = v; })),
-      numberField('Treats per round', d.treats, LIMITS.treats, (v) => edit((x) => { x.treats = v; })),
+      numberField('Rewards per round', d.treats, LIMITS.treats, (v) => edit((x) => { x.treats = v; })),
       note('Random each round: the counts vary by up to a third either way. Same for everyone: exactly these counts; only their places change.'),
     );
     return box;
@@ -108,7 +108,7 @@ const questions: Section = {
       toggle('Bonus questions', d.questions.enabled, (v) => edit((x) => { x.questions.enabled = v; })),
       numberField('Questions per round', d.questions.perRun, LIMITS.perRun, (v) => edit((x) => { x.questions.perRun = v; })),
       numberField('Time to answer', d.questions.timeLimit, LIMITS.timeLimit, (v) => edit((x) => { x.questions.timeLimit = v; }), 's'),
-      note("A right answer doubles that treat's points; a wrong answer or no answer gives 0."),
+      note("A right answer doubles that reward's points; a wrong answer or no answer gives 0."),
     );
     return box;
   },

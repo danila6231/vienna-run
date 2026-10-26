@@ -97,7 +97,7 @@ export class AttractScreen {
         const img = el('img');
         img.src = this.icons[type];
         img.alt = '';
-        // "Sachertorte · bánh sô-cô-la" shows as the name with the hint on a second, smaller line.
+        // "Krampus · quỷ Krampus" shows as the name with the hint on a second, smaller line.
         const [name, hint] = itemLabel(i18n, type).split(' · ');
         const label = el('span', '', name);
         if (hint) label.append(el('small', '', hint));

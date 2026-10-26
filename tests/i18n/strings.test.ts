@@ -18,9 +18,10 @@ describe('translation table', () => {
     expect(translate('vi', 'finish.points', { score: 120 })).toBe('120 điểm');
     expect(translate('en', 'finish.points')).toBe('{score} points');
   });
-  it('gives the Vietnamese hint next to each treat name', () => {
-    expect(translate('vi', 'item.sacher')).toBe('Sachertorte · bánh sô-cô-la');
-    expect(translate('en', 'item.sacher')).toBe('Sachertorte');
+  it('names the music rewards in each language, with a Vietnamese hint next to Krampus', () => {
+    expect(translate('vi', 'item.violin')).toBe('Đàn vĩ cầm');
+    expect(translate('en', 'item.violin')).toBe('Violin');
+    expect(translate('vi', 'item.krampus')).toBe('Krampus · quỷ Krampus');
   });
 });
 

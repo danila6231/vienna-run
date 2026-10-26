@@ -63,7 +63,7 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
       o.sh.visible = true;
       o.sh.position.set(x, 0.045, -r);
     } else if (it.state === 'taken') {
-      // Flies up onto the waiter's tray.
+      // Flies up to the musician's baton.
       const k = Math.min(1, it.t / 0.3);
       o.sp.position.set(x + (px + 0.5 - x) * k, 1.3 + 1.9 * k, -r * (1 - k));
       const f = (SIZE - k) / SIZE;

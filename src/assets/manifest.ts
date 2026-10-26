@@ -8,7 +8,7 @@ export interface ArtSet {
   /** Canvas for an asset id; designer file if present, otherwise the placeholder. Throws if neither exists. */
   get(id: string): HTMLCanvasElement;
   has(id: string): boolean;
-  /** Numbered sets such as facade-01…, waiter-run-01…; an empty array for an optional set nobody drew. */
+  /** Numbered sets such as facade-01…, musician-run-01…; an empty array for an optional set nobody drew. */
   group(prefix: string): HTMLCanvasElement[];
   source(id: string): Source | 'missing';
   /** Raw designer file URL (for HTML images such as gift cards and the logo), or null. */
@@ -20,7 +20,7 @@ export interface ArtSet {
 interface Finish { edge: number; shadow: boolean }
 const FINISHES: Array<[string, Finish]> = [
   ['item-', { edge: 0.045, shadow: true }],
-  ['waiter-', { edge: 0.016, shadow: true }],
+  ['musician-', { edge: 0.016, shadow: true }],
   ['riesenrad-cabin', { edge: 0.03, shadow: false }],
   ['prop-', { edge: 0.01, shadow: false }],
   ['facade-', { edge: 0.0065, shadow: false }],
@@ -37,7 +37,7 @@ const finishFor = (id: string): Finish => FINISHES.find(([prefix]) => id.startsW
 /** HTML-only files: never drawn into the 3D scene. */
 const isUiOnly = (id: string) => id.startsWith('gift-') || id === 'logo';
 
-const EMOJI: Record<string, string> = { sacher: '🍰', kipferl: '🥐', melange: '☕', mozart: '🍬', krampus: '👹', bomb: '💣' };
+const EMOJI: Record<string, string> = { piano: '🎹', violin: '🎻', sheet: '🎼', notes: '🎶', krampus: '👹', bomb: '💣' };
 const numbered = (prefix: string, count: number, paint: (i: number) => HTMLCanvasElement): Array<[string, Painter]> =>
   Array.from({ length: count }, (_, i) => [`${prefix}${String(i + 1).padStart(2, '0')}`, () => paint(i)]);
 
@@ -52,7 +52,7 @@ const PLACEHOLDERS: Record<string, Painter> = Object.fromEntries<Painter>([
   ['riesenrad-cabin', () => P.paintCabinA()],
   ['riesenrad-support', () => P.paintWheelSupportA()],
   ...Object.entries(EMOJI).map(([k, e]): [string, Painter] => [`item-${k}`, () => P.paperEdge(P.emojiCanvas(e, 128, 0.6), 6)]),
-  ...numbered('waiter-run-', 2, (i) => P.paintWaiterA(i)),
+  ...numbered('musician-run-', 2, (i) => P.paintMusicianA(i)),
   ['prop-lamp', () => P.paintLampA()],
   ['banner-finish', () => P.paintBannerA()],
   ['cloud-01', () => P.paintCloudA()],

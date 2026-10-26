@@ -1,6 +1,6 @@
 # Vienna Run
 
-A 40-second Vienna-themed booth runner: tap left/right to switch lanes, grab Viennese treats, dodge Krampus
+A 40-second Vienna-themed booth runner: tap left/right to switch lanes, catch the music (🎹 🎻 🎼 🎶), dodge Krampus
 and bombs, answer surprise questions for double points, and win a gift by score tier.
 
 - Design spec: `docs/superpowers/specs/2026-10-03-vienna-run-design.md`
@@ -27,7 +27,7 @@ and bombs, answer surprise questions for double points, and win a gift by score 
 For now, the **⚙ Settings** button in the top-left corner of the start screen opens the menu with no PIN.
 Set `QUICK_SETTINGS = false` in `src/main.ts` to hide it again: staff then **hold the top-left corner
 for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The menu sets:
-- **Difficulty:** Easy / Normal / Hard presets; round length, start and end speed, obstacles and treats
+- **Difficulty:** Easy / Normal / Hard presets; round length, start and end speed, obstacles and rewards
   per round; "Random each round" or "Same for everyone".
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Bonus questions:** on/off, how many per round, seconds to answer.
@@ -37,7 +37,7 @@ for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The
 
 Settings are saved on each device (press **Save**) and apply from the next round. The built-in
 defaults (also what **Reset to defaults** restores) are the booth's tuned round: 45 s at 90→110 km/h,
-"Same for everyone" with 40 obstacles and 75 treats, Krampus −20, bomb −25, bonus questions off.
+"Same for everyone" with 40 obstacles and 75 rewards, Krampus −20, bomb −25, bonus questions off.
 
 ## Languages
 The game starts in **Vietnamese**. The **VI | EN** pill on the start screen switches to English for one

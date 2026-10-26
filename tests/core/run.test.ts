@@ -34,24 +34,24 @@ describe('Run', () => {
     expect(run.x).toBeGreaterThan(0.9);
   });
 
-  it('collects a treat in its lane and puts it on the tray', () => {
-    const run = new Run({ seed: 1, items: [mk(5, 0, 'sacher')], slots: [] });
+  it('collects a reward in its lane and puts it on the stack', () => {
+    const run = new Run({ seed: 1, items: [mk(5, 0, 'piano')], slots: [] });
     const ev = advance(run, 1);
     expect(run.score).toBe(15);
     expect(ev).toContainEqual(expect.objectContaining({ kind: 'collect', points: 15 }));
-    expect(run.tray).toEqual(['sacher']);
+    expect(run.tray).toEqual(['piano']);
     expect(run.items[0].state).toBe('taken');
   });
 
   it('ignores items in other lanes', () => {
-    const run = new Run({ seed: 1, items: [mk(5, 1, 'sacher')], slots: [] });
+    const run = new Run({ seed: 1, items: [mk(5, 1, 'piano')], slots: [] });
     advance(run, 1);
     expect(run.score).toBe(0);
     expect(run.items[0].state).toBe('live');
   });
 
-  it('costs points on an obstacle, never below zero, and knocks a treat off the tray', () => {
-    const run = new Run({ seed: 1, items: [mk(5, 0, 'sacher'), mk(15, 0, 'bomb')], slots: [] });
+  it('costs points on an obstacle, never below zero, and knocks a reward off the stack', () => {
+    const run = new Run({ seed: 1, items: [mk(5, 0, 'piano'), mk(15, 0, 'bomb')], slots: [] });
     advance(run, 1.1);
     expect(run.score).toBe(0);
     expect(run.tray).toEqual([]);
@@ -61,8 +61,8 @@ describe('Run', () => {
     expect(run2.score).toBe(0);
   });
 
-  it('turns the first treat after a slot into a question and pauses', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 0, 'kipferl')], slots: [0.1] });
+  it('turns the first reward after a slot into a question and pauses', () => {
+    const run = new Run({ seed: 1, items: [mk(10, 0, 'violin')], slots: [0.1] });
     const ev = advance(run, 1);
     expect(kinds(ev)).toContain('question');
     expect(run.paused).toBe(true);
@@ -76,7 +76,7 @@ describe('Run', () => {
   });
 
   it('gives nothing for a wrong answer', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 0, 'kipferl')], slots: [0.1] });
+    const run = new Run({ seed: 1, items: [mk(10, 0, 'violin')], slots: [0.1] });
     advance(run, 1);
     run.answer(false);
     expect(run.score).toBe(0);

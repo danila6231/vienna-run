@@ -58,6 +58,8 @@ export const LIMITS = {
 
 export const BOARD_RE = /^[a-z0-9-]{1,24}$/;
 const PIN_RE = /^\d{4}$/;
+/** The rewards were Viennese treats before the music theme; points saved under the old names carry over. */
+const RENAMED: Record<string, ItemType> = { sacher: 'piano', kipferl: 'violin', melange: 'sheet', mozart: 'notes' };
 
 export function defaultSettings(): Settings {
   return {
@@ -126,7 +128,9 @@ export function sanitize(raw: unknown): Settings {
   const rawPoints = (r.points && typeof r.points === 'object' ? r.points : {}) as Record<string, unknown>;
   const points = { ...d.points };
   for (const k of Object.keys(points) as ItemType[]) {
-    points[k] = clamp(rawPoints[k], CONFIG.items[k].good ? LIMITS.goodPoints : LIMITS.badPoints, d.points[k]);
+    const old = Object.keys(RENAMED).find((o) => RENAMED[o] === k);
+    const v = k in rawPoints || !old ? rawPoints[k] : rawPoints[old];
+    points[k] = clamp(v, CONFIG.items[k].good ? LIMITS.goodPoints : LIMITS.badPoints, d.points[k]);
   }
   const q = (r.questions && typeof r.questions === 'object' ? r.questions : {}) as Record<string, unknown>;
   const lb = (r.leaderboard && typeof r.leaderboard === 'object' ? r.leaderboard : {}) as Record<string, unknown>;
@@ -195,7 +199,7 @@ export function warnings(s: Settings): string[] {
   const avg = (n: number) => Math.round(n / FIT_SEEDS.length);
   const notes: string[] = [];
   if (avg(bad) < s.obstacles * 0.9) notes.push(`Only about ${avg(bad)} of ${s.obstacles} obstacles fit in a round this long at these speeds.`);
-  if (avg(good) < s.treats * 0.9) notes.push(`Only about ${avg(good)} of ${s.treats} treats fit in a round this long at these speeds; the rest are left out.`);
+  if (avg(good) < s.treats * 0.9) notes.push(`Only about ${avg(good)} of ${s.treats} rewards fit in a round this long at these speeds; the rest are left out.`);
   return notes;
 }
 

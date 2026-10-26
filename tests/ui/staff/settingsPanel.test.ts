@@ -59,10 +59,10 @@ describe('SettingsPanel', () => {
   });
   it('keeps typed numbers inside their range', () => {
     const { root } = setup();
-    const treats = field(root, 'Treats per round');
+    const treats = field(root, 'Rewards per round');
     type(treats, '500');
     expect(treats.value).toBe('80');
-    click(root, 'Treats per round up');
+    click(root, 'Rewards per round up');
     expect(treats.value).toBe('80');
   });
   it('refuses to save settings that cannot work, and says why', () => {
@@ -76,11 +76,11 @@ describe('SettingsPanel', () => {
   });
   it('warns, without blocking Save, when the counts cannot fit the round', () => {
     const { root } = setup();
-    type(field(root, 'Treats per round'), '80');
+    type(field(root, 'Rewards per round'), '80');
     type(field(root, 'Obstacles per round'), '40');
-    expect(root.querySelector('.st-warnings')?.textContent).toMatch(/treats fit/);
+    expect(root.querySelector('.st-warnings')?.textContent).toMatch(/rewards fit/);
     expect(buttonNamed(root, 'Save').disabled).toBe(false);
-    type(field(root, 'Treats per round'), '31');
+    type(field(root, 'Rewards per round'), '31');
     type(field(root, 'Obstacles per round'), '11');
     expect(root.querySelector('.st-warnings')?.textContent).toBe('');
   });

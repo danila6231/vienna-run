@@ -95,6 +95,11 @@ describe('sanitize', () => {
     expect(sanitize({ ...defaultSettings(), mode: 'zigzag' }).mode).toBe('fixed');
     expect(sanitize({ ...defaultSettings(), mode: 'random' }).mode).toBe('random');
   });
+  it('carries points saved under the old treat names over to the music rewards', () => {
+    const old = { ...defaultSettings(), points: { sacher: 30, kipferl: 20, melange: 8, mozart: 4, krampus: -20, bomb: -25 } };
+    expect(sanitize(old).points).toEqual({ piano: 30, violin: 20, sheet: 8, notes: 4, krampus: -20, bomb: -25 });
+    expect(sanitize({ ...defaultSettings(), points: { ...defaultSettings().points, piano: 12, sacher: 30 } }).points.piano).toBe(12);
+  });
 });
 
 describe('share codes', () => {
@@ -131,12 +136,12 @@ describe('warnings', () => {
   it('say nothing for the presets', () => {
     for (const p of ['easy', 'normal', 'hard'] as const) expect(warnings(applyPreset(defaultSettings(), p))).toEqual([]);
   });
-  it('explain when a short, slow round cannot fit the treats', () => {
+  it('explain when a short, slow round cannot fit the rewards', () => {
     const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 20, startSpeedKmh: 30, endSpeedKmh: 30 });
-    expect(w.join(' ')).toMatch(/about \d+ of 31 treats fit/);
+    expect(w.join(' ')).toMatch(/about \d+ of 31 rewards fit/);
   });
   it('explain when too many items are asked for', () => {
     const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), obstacles: 40, treats: 80 });
-    expect(w.join(' ')).toMatch(/of 80 treats fit/);
+    expect(w.join(' ')).toMatch(/of 80 rewards fit/);
   });
 });

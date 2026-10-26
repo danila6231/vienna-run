@@ -1,9 +1,9 @@
 export type Lane = -1 | 0 | 1;
-export type GoodType = 'sacher' | 'kipferl' | 'melange' | 'mozart';
+export type GoodType = 'piano' | 'violin' | 'sheet' | 'notes';
 export type BadType = 'krampus' | 'bomb';
 export type ItemType = GoodType | BadType;
 
-export const GOOD_TYPES: readonly GoodType[] = ['sacher', 'kipferl', 'melange', 'mozart'];
+export const GOOD_TYPES: readonly GoodType[] = ['piano', 'violin', 'sheet', 'notes'];
 export const BAD_TYPES: readonly BadType[] = ['krampus', 'bomb'];
 export const isGood = (t: ItemType): t is GoodType => (GOOD_TYPES as readonly string[]).includes(t);
 

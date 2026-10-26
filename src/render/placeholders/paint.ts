@@ -36,42 +36,62 @@ function emojiCanvas(e, size, fill = 0.6) {
 const INK = '#3a2a22';
 function inkFill(g, fill, lw = 3) { g.fillStyle = fill; g.fill(); g.lineWidth = lw; g.strokeStyle = INK; g.stroke(); }
 
-function paintWaiterA(frame) {
+// A Mozart-style musician seen from behind: powdered wig with a ribboned queue, red frock coat with gold trim,
+// knee breeches and white stockings, a conductor's baton raised in the right hand (collected music floats above its tip).
+function paintMusicianA(frame) {
   const c = cnv(256, 384), g = c.getContext('2d');
   g.lineJoin = 'round'; g.lineCap = 'round';
+  const COAT = '#b3302c', COAT_DK = '#87211f', GOLD = '#d9b44a', WIG = '#f1ece2', WIG_LN = '#c9c0b0', SKIN = '#eec3a0', LACE = '#fbfaf5';
   const lift = (left) => (frame === 0) === left ? 26 : 0;
   for (const [x, left] of [[108, true], [148, false]]) {
     const l = lift(left);
-    rr(g, x - 17, 252 - l * 0.2, 34, 96 - l, 10); inkFill(g, '#1b1a22');
-    rr(g, x - 19, 334 - l * 1.15, 38, 22, 9); inkFill(g, '#4a3227');
+    rr(g, x - 15, 252 - l * 0.2, 30, 96 - l, 10); inkFill(g, '#f4efe4');
+    rr(g, x - 18, 250 - l * 0.2, 36, 70 - l * 0.45, 10); inkFill(g, COAT_DK);
+    rr(g, x - 17, 312 - l * 0.65, 34, 6, 3); inkFill(g, GOLD, 2);
+    rr(g, x - 19, 334 - l * 1.15, 38, 22, 9); inkFill(g, '#1f1a1e');
   }
-  poly(g, [92, 246, 96, 300, 122, 320, 128, 270, 134, 320, 160, 300, 164, 246]); inkFill(g, '#1f1e27');
-  g.beginPath(); g.moveTo(84, 150); g.quadraticCurveTo(128, 136, 172, 150); g.lineTo(166, 258); g.quadraticCurveTo(128, 266, 90, 258); g.closePath(); inkFill(g, '#24232c');
-  g.strokeStyle = '#3d3c4a'; g.lineWidth = 3; g.beginPath(); g.moveTo(128, 160); g.lineTo(128, 256); g.stroke();
+  poly(g, [90, 244, 76, 304, 124, 316, 128, 292, 132, 316, 180, 304, 166, 244]); inkFill(g, COAT);
+  g.strokeStyle = COAT_DK; g.lineWidth = 3; g.beginPath(); g.moveTo(114, 254); g.quadraticCurveTo(108, 284, 104, 310); g.moveTo(142, 254); g.quadraticCurveTo(148, 284, 152, 310); g.stroke();
+  g.strokeStyle = GOLD; g.beginPath(); g.moveTo(81, 301); g.lineTo(123, 312); g.moveTo(133, 312); g.lineTo(175, 301); g.stroke();
+  g.beginPath(); g.moveTo(84, 150); g.quadraticCurveTo(128, 136, 172, 150); g.lineTo(166, 258); g.quadraticCurveTo(128, 266, 90, 258); g.closePath(); inkFill(g, COAT);
+  g.strokeStyle = COAT_DK; g.lineWidth = 3; g.beginPath(); g.moveTo(128, 160); g.lineTo(128, 252); g.stroke();
   g.beginPath(); g.moveTo(100, 176); g.quadraticCurveTo(112, 196, 108, 214); g.moveTo(156, 176); g.quadraticCurveTo(144, 196, 148, 214); g.stroke();
-  g.lineWidth = 26; g.strokeStyle = INK; g.beginPath(); g.moveTo(166, 160); g.quadraticCurveTo(200, 122, 194, 64); g.stroke();
-  g.lineWidth = 20; g.strokeStyle = '#24232c'; g.stroke();
-  g.lineWidth = 20; g.strokeStyle = '#f7f3ea'; g.beginPath(); g.moveTo(195, 76); g.lineTo(194, 66); g.stroke();
-  g.beginPath(); g.arc(194, 54, 11, 0, TAU); inkFill(g, '#eec3a0');
+  for (const x of [115, 141]) { g.beginPath(); g.arc(x, 247, 5, 0, TAU); inkFill(g, GOLD, 2); }
+  // Right arm raised with the baton: sleeve, turned-back cuff, lace ruffle, baton, then the hand gripping it.
+  g.lineWidth = 26; g.strokeStyle = INK; g.beginPath(); g.moveTo(166, 160); g.quadraticCurveTo(204, 126, 198, 76); g.stroke();
+  g.lineWidth = 20; g.strokeStyle = COAT; g.stroke();
+  rr(g, 184, 78, 30, 18, 6); inkFill(g, COAT_DK); g.strokeStyle = GOLD; g.lineWidth = 2; g.beginPath(); g.moveTo(188, 82); g.lineTo(210, 82); g.stroke();
+  poly(g, [185, 78, 189, 68, 193, 74, 198, 65, 203, 74, 207, 68, 211, 78]); inkFill(g, LACE, 2);
+  g.lineWidth = 7; g.strokeStyle = INK; g.beginPath(); g.moveTo(195, 66); g.lineTo(212, 12); g.stroke();
+  g.lineWidth = 3.5; g.strokeStyle = '#f7f1e3'; g.stroke();
+  g.beginPath(); g.arc(196, 62, 11, 0, TAU); inkFill(g, SKIN);
   const sw = frame === 0 ? 7 : -7;
-  g.lineWidth = 26; g.strokeStyle = INK; g.beginPath(); g.moveTo(90, 160); g.quadraticCurveTo(74, 200, 72 + sw, 244); g.stroke();
-  g.lineWidth = 20; g.strokeStyle = '#24232c'; g.stroke();
-  poly(g, [60 + sw, 206, 88 + sw, 204, 92 + sw, 246, 74 + sw, 262, 58 + sw, 244]); inkFill(g, '#fbfaf5');
-  g.beginPath(); g.arc(73 + sw, 262, 10, 0, TAU); inkFill(g, '#eec3a0');
-  rr(g, 112, 120, 32, 18, 4); inkFill(g, '#eec3a0');
-  rr(g, 106, 132, 44, 14, 5); inkFill(g, '#f7f3ea');
-  g.beginPath(); g.ellipse(91, 102, 8, 12, 0, 0, TAU); inkFill(g, '#e4b38f');
-  g.beginPath(); g.ellipse(165, 102, 8, 12, 0, 0, TAU); inkFill(g, '#e4b38f');
-  g.beginPath(); g.arc(128, 96, 37, 0, TAU); inkFill(g, '#eec3a0');
+  g.lineWidth = 26; g.strokeStyle = INK; g.beginPath(); g.moveTo(90, 160); g.quadraticCurveTo(74, 200, 72 + sw, 240); g.stroke();
+  g.lineWidth = 20; g.strokeStyle = COAT; g.stroke();
+  rr(g, 57 + sw, 224, 30, 18, 6); inkFill(g, COAT_DK); g.strokeStyle = GOLD; g.lineWidth = 2; g.beginPath(); g.moveTo(61 + sw, 238); g.lineTo(83 + sw, 238); g.stroke();
+  poly(g, [58 + sw, 242, 62 + sw, 252, 66 + sw, 246, 72 + sw, 255, 78 + sw, 246, 82 + sw, 252, 86 + sw, 242]); inkFill(g, LACE, 2);
+  g.beginPath(); g.arc(72 + sw, 260, 10, 0, TAU); inkFill(g, SKIN);
+  // Neck, white stock, standing collar; then the wig, combed back into the queue.
+  rr(g, 112, 118, 32, 20, 4); inkFill(g, SKIN);
+  rr(g, 108, 128, 40, 10, 4); inkFill(g, LACE);
+  rr(g, 102, 134, 52, 14, 6); inkFill(g, COAT_DK);
+  g.strokeStyle = GOLD; g.lineWidth = 2; g.beginPath(); g.moveTo(107, 138); g.lineTo(149, 138); g.stroke();
+  g.beginPath(); g.arc(128, 96, 37, 0, TAU); inkFill(g, WIG);
   g.save(); g.beginPath(); g.arc(128, 96, 37, 0, TAU); g.clip();
-  g.beginPath(); g.ellipse(128, 86, 40, 40, 0, 0, TAU); g.fillStyle = '#16131a'; g.fill();
-  g.strokeStyle = '#4b4458'; g.lineWidth = 3;
-  for (const dx of [-18, -6, 6, 18]) { g.beginPath(); g.moveTo(128 + dx, 58); g.quadraticCurveTo(128 + dx * 1.15, 90, 128 + dx * 0.9, 120); g.stroke(); }
+  g.strokeStyle = WIG_LN; g.lineWidth = 3;
+  for (const dx of [-22, -9, 4, 17]) { g.beginPath(); g.moveTo(128 + dx, 58); g.quadraticCurveTo(128 + dx * 1.2, 92, 128 + dx * 0.35, 132); g.stroke(); }
   g.restore();
   g.beginPath(); g.arc(128, 96, 37, 0, TAU); g.lineWidth = 3; g.strokeStyle = INK; g.stroke();
-  const tg = g.createLinearGradient(0, 22, 0, 44); tg.addColorStop(0, '#f3f6f9'); tg.addColorStop(1, '#a9b1ba');
-  g.beginPath(); g.ellipse(188, 36, 56, 12, 0, 0, TAU); g.fillStyle = tg; g.fill(); g.lineWidth = 3; g.strokeStyle = '#5e6670'; g.stroke();
-  g.beginPath(); g.ellipse(188, 33, 40, 6, 0, 0, TAU); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.stroke();
+  for (const sd of [-1, 1]) for (const [y, rx] of [[96, 12], [114, 11]]) {
+    const cx = 128 + sd * 36;
+    g.beginPath(); g.ellipse(cx, y, rx, 8, 0, 0, TAU); inkFill(g, WIG, 2.5);
+    g.beginPath(); g.arc(cx + sd * 3, y, 3.5, 0, TAU); g.strokeStyle = WIG_LN; g.lineWidth = 2; g.stroke();
+  }
+  g.beginPath(); g.moveTo(123, 122); g.quadraticCurveTo(128, 119, 133, 122); g.quadraticCurveTo(134, 150, 131, 168); g.quadraticCurveTo(128, 174, 125, 168); g.quadraticCurveTo(122, 150, 123, 122); g.closePath(); inkFill(g, WIG, 2.5);
+  g.beginPath(); g.arc(131, 172, 6, Math.PI * 0.9, Math.PI * 2.6); g.strokeStyle = INK; g.lineWidth = 2.5; g.stroke();
+  g.strokeStyle = WIG_LN; g.lineWidth = 1.5; g.beginPath(); g.moveTo(127, 136); g.lineTo(127, 164); g.moveTo(130, 136); g.lineTo(130, 162); g.stroke();
+  for (const sd of [-1, 1]) { poly(g, [128, 128, 128 + sd * 12, 122, 128 + sd * 12, 135]); inkFill(g, '#1b1a22', 2); }
+  g.beginPath(); g.arc(128, 128, 3.5, 0, TAU); inkFill(g, '#1b1a22', 2);
   return paperEdge(c, 6);
 }
 
@@ -388,7 +408,7 @@ function grainDataUrl() {
 
 export {
   TAU, hash, cnv, mixHex, EMOJI_FONT, silhouette, paperEdge, emojiCanvas, FACADE_PAL, SIGNS,
-  paintWaiterA, paintFacadeA, paintBackA, paintStephansdomA, paintKarlskircheA, paintHofburgA,
+  paintMusicianA, paintFacadeA, paintBackA, paintStephansdomA, paintKarlskircheA, paintHofburgA,
   paintWheelA, paintWheelSupportA, paintCabinA, paintTramA, paintLampA, paintBannerA, paintCheckerA,
   paintCloudA, paintSkylineA, paintRoadA, paintWalkA, blobCanvas, shadowStrip, grainDataUrl,
 };

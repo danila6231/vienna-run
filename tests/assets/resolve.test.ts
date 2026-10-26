@@ -5,19 +5,19 @@ describe('art resolution', () => {
   it('turns a glob path into an asset id', () => {
     expect(baseName('./art/facade-01.png')).toBe('facade-01');
     expect(baseName('/src/assets/art/logo.svg')).toBe('logo');
-    expect(baseName('./art/item-sacher.WEBP')).toBe('item-sacher');
+    expect(baseName('./art/item-piano.WEBP')).toBe('item-piano');
   });
   it('prefers designer files for a whole group', () => {
     expect(groupIds('facade-', ['facade-02', 'facade-01', 'item-bomb'], ['facade-01', 'facade-03']))
       .toEqual({ ids: ['facade-01', 'facade-02'], fromDesigner: true });
   });
   it('falls back to placeholders when the designer has none in a group', () => {
-    expect(groupIds('waiter-run-', ['facade-01'], ['waiter-run-01', 'waiter-run-02']))
-      .toEqual({ ids: ['waiter-run-01', 'waiter-run-02'], fromDesigner: false });
+    expect(groupIds('musician-run-', ['facade-01'], ['musician-run-01', 'musician-run-02']))
+      .toEqual({ ids: ['musician-run-01', 'musician-run-02'], fromDesigner: false });
   });
   it('accepts a single-frame group and an empty optional group', () => {
-    expect(groupIds('waiter-run-', ['waiter-run-01'], ['waiter-run-01', 'waiter-run-02']).ids).toEqual(['waiter-run-01']);
-    expect(groupIds('waiter-stumble-', [], ['waiter-run-01']).ids).toEqual([]);
+    expect(groupIds('musician-run-', ['musician-run-01'], ['musician-run-01', 'musician-run-02']).ids).toEqual(['musician-run-01']);
+    expect(groupIds('musician-stumble-', [], ['musician-run-01']).ids).toEqual([]);
   });
   it('scales the paper edge with image size but keeps it visible', () => {
     expect(edgeRadius(0.045, 512, 512)).toBe(23);

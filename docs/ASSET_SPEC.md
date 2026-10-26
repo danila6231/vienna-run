@@ -1,10 +1,10 @@
 # Vienna Run: art brief
 
-Vienna Run is a 40-second booth game. A Viennese waiter (Herr Ober) runs down a Vienna street
-from Stephansdom to the Riesenrad, collecting treats and dodging Krampus and bombs. The houses
+Vienna Run is a 40-second booth game. A Mozart-style musician runs down a Vienna street
+from Stephansdom to the Riesenrad, catching music (a piano, a violin, sheet music, notes) and dodging Krampus and bombs. The houses
 and landmarks are **3D models built in code** (`src/render/buildings/`), lit from the upper left
 in the palette below. Everything else is a flat, illustrated paper cutout standing in that street:
-the waiter, the treats, lamps, clouds, the tram, the finish banner. This brief covers those
+the musician, the rewards, lamps, clouds, the tram, the finish banner. This brief covers those
 cutouts, plus the paper houses and landmarks that staff can switch to on a PC too weak for 3D
 (settings → Graphics → Paper); those rows are marked *Paper look only* and matter least. To see the street, run `npm run demo:buildings` and open
 `dist-demo/vienna-run-street-looks.html`.
@@ -53,10 +53,10 @@ yet keeps its placeholder, so you can deliver piece by piece.
 | `riesenrad-wheel.png` | 1 | 2048×2048 | The wheel only: rims and spokes, **no cabins**. The wheel's center must be the image center (the game spins it). Shown 29 m wide. *Paper look only.* |
 | `riesenrad-cabin.png` | 1 | 256×256 | One red cabin, hanging upright. The game places 15 of them around the wheel. *Paper look only.* |
 | `riesenrad-support.png` | 1 | 2048 wide | Legs and base building. The hub point is **top center**; the bottom edge is the ground. *Paper look only.* |
-| `item-sacher.png`, `item-kipferl.png`, `item-melange.png`, `item-mozart.png`, `item-krampus.png`, `item-bomb.png` | 6 | 512×512 | Object fills about 70% of the canvas, centered, 3/4 front view. Must read clearly at 60–90 px on screen. Treats warm and tasty-looking; Krampus and the bomb dark/red and instantly "bad". |
-| `waiter-run-01.png` … `waiter-run-08.png` | 6–8 | 512×768 per frame | Herr Ober **seen from behind**: black tailcoat, slick hair, right arm raised holding a silver tray, white napkin over the left forearm. One full running cycle. |
-| `waiter-stumble-01.png` … | 0–2 | 512×768 | Optional: hit by a bomb. If missing, the game wobbles the run frames instead. |
-| `waiter-celebrate-01.png` … | 0–2 | 512×768 | Optional: crossing the finish. |
+| `item-piano.png`, `item-violin.png`, `item-sheet.png`, `item-notes.png`, `item-krampus.png`, `item-bomb.png` | 6 | 512×512 | Object fills about 70% of the canvas, centered, 3/4 front view. Must read clearly at 60–90 px on screen. The four rewards are a piano, a violin, sheet music and notes (the placeholders are 🎹 🎻 🎼 🎶), bright and inviting; Krampus and the bomb dark/red and instantly "bad". |
+| `musician-run-01.png` … `musician-run-08.png` | 6–8 | 512×768 per frame | A Mozart-style musician **seen from behind**: white powdered wig with side curls and a queue tied with a black bow, red frock coat with gold trim, knee breeches, white stockings, black shoes; right arm raised holding a conductor's baton. One full running cycle. |
+| `musician-stumble-01.png` … | 0–2 | 512×768 | Optional: hit by a bomb. If missing, the game wobbles the run frames instead. |
+| `musician-celebrate-01.png` … | 0–2 | 512×768 | Optional: crossing the finish. |
 | `prop-lamp.png` | 1 | about 200×1024 | Ornate Viennese street lantern, shown 4.5 m tall. |
 | `banner-finish.png` | 1 | 1024×200 | "ZIEL · FINISH" banner, shown 10.4 m wide. Poles and the checkered line are drawn by the game. |
 | `cloud-01.png` … | 1–3 | 512×240 | Paper clouds. |
@@ -67,11 +67,11 @@ yet keeps its placeholder, so you can deliver piece by piece.
 | `gift-0.png`, `gift-1.png` … | — | 512×512 | **Not used right now** (gift display was removed from the game). Skip unless it comes back. |
 | `logo.svg` | 0–1 | vector | Optional; replaces the "Vienna Run" title on the start screen. |
 
-## Two anchors that must match across waiter frames
+## Two anchors that must match across musician frames
 - **Feet:** bottom center of every frame (x = 256, y = 768).
-- **Tray center:** the same pixel in every frame, ideally **x = 376, y = 72**. Collected treats
-  stack on this point. If you put the tray elsewhere, tell the developer the pixel and they'll
-  change one constant (`TRAY` in `src/render/runner.ts`).
+- **Baton tip:** the same pixel in every frame, ideally **x = 424, y = 24**. Collected music
+  floats in a column above this point. If you put the baton elsewhere, tell the developer the pixel
+  and they'll change one constant (`BATON` in `src/render/runner.ts`).
 
 ## How a file goes live
 1. Save it into `src/assets/art/` with the exact name above.

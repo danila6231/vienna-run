@@ -8,19 +8,21 @@ import * as P from './placeholders/paint';
 import { fitSquare } from './sizing';
 
 export interface Runner {
-  /** Draws the waiter for this frame and returns his x position in metres. */
+  /** Draws the musician for this frame and returns his x position in metres. */
   update(run: Run, frameDt: number): number;
 }
 
-/** Tray centre inside a waiter frame: share of width from the left, share of height from the top (docs/ASSET_SPEC.md). */
-const TRAY = { u: 0.734, v: 0.094 };
+/** Baton tip inside a musician frame: share of width from the left, share of height from the top (docs/ASSET_SPEC.md). */
+const BATON = { u: 0.828, v: 0.031 };
+/** How far above the baton tip the first collected item floats, in metres. */
+const FLOAT = 0.45;
 const HEIGHT = 3.0;
 
 export function createRunner(scene: THREE.Scene, art: ArtSet, items: ItemsLayer, laneWidth: number): Runner {
-  const runArt = art.group('waiter-run-');
+  const runArt = art.group('musician-run-');
   const runFrames = runArt.map((c) => toTexture(c));
-  const stumbleFrames = art.group('waiter-stumble-').map((c) => toTexture(c));
-  const celebrateFrames = art.group('waiter-celebrate-').map((c) => toTexture(c));
+  const stumbleFrames = art.group('musician-stumble-').map((c) => toTexture(c));
+  const celebrateFrames = art.group('musician-celebrate-').map((c) => toTexture(c));
   const width = (HEIGHT * runArt[0].width) / runArt[0].height;
 
   const mat = new THREE.SpriteMaterial({ map: runFrames[0], alphaTest: 0.3 });
@@ -36,15 +38,15 @@ export function createRunner(scene: THREE.Scene, art: ArtSet, items: ItemsLayer,
   blob.position.y = 0.035;
   scene.add(blob);
   const stack = Array.from({ length: 6 }, () => {
-    const s = new THREE.Sprite(items.material('sacher'));
+    const s = new THREE.Sprite(items.material('notes'));
     s.scale.set(0.72, 0.72, 1);
     s.visible = false;
     scene.add(s);
     return s;
   });
-  // The treat knocked off the tray by an obstacle tumbles to the ground. It gets its own material copy,
-  // because spinning a shared material would spin every treat of that type on the road too.
-  const falling = new THREE.Sprite(items.material('sacher').clone());
+  // The reward knocked off the stack by an obstacle tumbles to the ground. It gets its own material copy,
+  // because spinning a shared material would spin every reward of that type on the road too.
+  const falling = new THREE.Sprite(items.material('notes').clone());
   falling.scale.set(0.72, 0.72, 1);
   falling.visible = false;
   scene.add(falling);
@@ -66,7 +68,7 @@ export function createRunner(scene: THREE.Scene, art: ArtSet, items: ItemsLayer,
       sprite.position.set(px, bob, 0);
       blob.position.x = px;
 
-      const lx = (TRAY.u - 0.5) * width, ly = (1 - TRAY.v) * HEIGHT + 0.25;
+      const lx = (BATON.u - 0.5) * width, ly = (1 - BATON.v) * HEIGHT + FLOAT;
       const ca = Math.cos(-lean), sa = Math.sin(-lean);
       stack.forEach((s, i) => {
         const type = run.tray[i];
@@ -78,7 +80,8 @@ export function createRunner(scene: THREE.Scene, art: ArtSet, items: ItemsLayer,
         s.material = items.material(type);
         const box = fitSquare(items.aspect(type), 0.72);
         s.scale.set(box.w, box.h, 1);
-        const ox = lx + Math.sin(i * 2.3) * 0.05, oy = ly + i * 0.36;
+        // The collected music floats in a gently swaying column above the baton.
+        const ox = lx + Math.sin(i * 2.3 + animT * 3) * 0.05, oy = ly + i * 0.36 + Math.sin(animT * 4 + i) * 0.03;
         s.position.set(px + ox * ca - oy * sa, bob + ox * sa + oy * ca, 0.1);
       });
 

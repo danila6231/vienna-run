@@ -15,13 +15,13 @@ const runTo = (run: Run, dist: number) => { while (run.dist < dist) run.update(1
 
 describe('Bot', () => {
   it('never steers into an obstacle that is right beside it, even for treats behind it', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 1, 'bomb'), mk(14, 1, 'sacher'), mk(18, 1, 'sacher'), mk(22, 1, 'sacher')], slots: [] });
+    const run = new Run({ seed: 1, items: [mk(10, 1, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')], slots: [] });
     runTo(run, 9.5);
     new Bot(createRng(1), { ...BOT_SKILLS.skilled, mistakeRate: 0 }).step(run, 1 / 60);
     expect(run.lane).toBe(0);
   });
   it('does not cut through a lane with an obstacle right beside it on the way to a far lane', () => {
-    const run = new Run({ seed: 1, items: [mk(10, 0, 'bomb'), mk(14, 1, 'sacher'), mk(18, 1, 'sacher'), mk(22, 1, 'sacher')], slots: [] });
+    const run = new Run({ seed: 1, items: [mk(10, 0, 'bomb'), mk(14, 1, 'piano'), mk(18, 1, 'piano'), mk(22, 1, 'piano')], slots: [] });
     run.move(-1);
     runTo(run, 9.5);
     new Bot(createRng(1), { ...BOT_SKILLS.skilled, mistakeRate: 0 }).step(run, 1 / 60);

@@ -4,7 +4,7 @@ import { CONFIG } from '../../src/config';
 import { I18n } from '../../src/i18n/i18n';
 import { AttractScreen } from '../../src/ui/attract';
 
-const icons = { sacher: 'a.png', kipferl: 'b.png', melange: 'c.png', mozart: 'd.png', krampus: 'e.png', bomb: 'f.png' };
+const icons = { piano: 'a.png', violin: 'b.png', sheet: 'c.png', notes: 'd.png', krampus: 'e.png', bomb: 'f.png' };
 const noGifts = { showGifts: false, leaderboard: false };
 
 describe('AttractScreen', () => {
@@ -13,7 +13,8 @@ describe('AttractScreen', () => {
     s.configure(CONFIG, noGifts);
     const text = s.root.textContent ?? '';
     expect(text).toContain('Tap anywhere to play');
-    expect(text).toContain('Sachertorte');
+    expect(text).toContain('Piano');
+    expect(text).toContain('Race the musician');
     expect(text).toContain('+15');
     expect(text).toContain('−20');
     expect(s.root.querySelectorAll('.legend img')).toHaveLength(6);
@@ -21,7 +22,7 @@ describe('AttractScreen', () => {
   it('shows the points from the current settings', () => {
     const s = new AttractScreen(document.body, new I18n('en'), icons, null);
     s.configure(CONFIG, noGifts);
-    s.configure({ ...CONFIG, items: { ...CONFIG.items, sacher: { points: 25, good: true } } }, noGifts);
+    s.configure({ ...CONFIG, items: { ...CONFIG.items, piano: { points: 25, good: true } } }, noGifts);
     expect(s.root.textContent).toContain('+25');
     expect(s.root.querySelectorAll('.legend li')).toHaveLength(6);
   });
@@ -44,12 +45,13 @@ describe('AttractScreen', () => {
     const s = new AttractScreen(document.body, new I18n('en'), icons, 'logo.svg');
     expect(s.root.querySelector('img.logo')?.getAttribute('src')).toBe('logo.svg');
   });
-  it('is in Vietnamese by default, with a hint next to each treat', () => {
+  it('is in Vietnamese by default, with a hint next to Krampus', () => {
     const s = new AttractScreen(document.body, new I18n(), icons, null);
     s.configure(CONFIG, noGifts);
     expect(s.root.textContent).toContain('Chạm vào màn hình để chơi');
-    expect(s.root.querySelector('.legend li span')?.textContent).toBe('Sachertortebánh sô-cô-la');
-    expect(s.root.querySelector('.legend li small')?.textContent).toBe('bánh sô-cô-la');
+    const labels = [...s.root.querySelectorAll('.legend li span')].map((x) => x.textContent);
+    expect(labels.slice(0, 4)).toEqual(['Đàn piano', 'Đàn vĩ cầm', 'Bản nhạc', 'Nốt nhạc']);
+    expect(s.root.querySelector('.legend li.bad small')?.textContent).toBe('quỷ Krampus');
   });
   it('switches language with the VI | EN pill without starting a game', () => {
     const i18n = new I18n();
