@@ -18,7 +18,7 @@ export function toRow(e: ScoreEntry) {
     id: e.id,
     created_at: e.at,
     board: BOARD_RE.test(e.board) ? e.board : 'booth',
-    score: Math.max(0, Math.min(5000, Math.round(e.score))),
+    score: Math.max(0, Math.min(20000, Math.round(e.score))),
     name: e.name !== null && NAME_RE.test(e.name) ? e.name : null,
     preset: e.preset,
     lang: e.lang,

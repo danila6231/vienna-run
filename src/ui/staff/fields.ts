@@ -20,8 +20,8 @@ export function note(text: string): HTMLElement {
   return el('p', 'st-note', text);
 }
 
-/** A whole-number field with − and + buttons for touch. Typed values are clamped into range when the field is left. */
-export function numberField(label: string, value: number, range: readonly [number, number], onChange: (v: number) => void, unit = ''): HTMLElement {
+/** A whole-number field with − and + buttons for touch (moving by `step`). Typed values are clamped into range when the field is left. */
+export function numberField(label: string, value: number, range: readonly [number, number], onChange: (v: number) => void, unit = '', step = 1): HTMLElement {
   const input = el('input', 'st-num');
   input.type = 'number';
   input.inputMode = 'numeric';
@@ -40,9 +40,9 @@ export function numberField(label: string, value: number, range: readonly [numbe
     if (input.value.trim() !== '' && Number.isInteger(v) && v >= range[0] && v <= range[1]) onChange(v);
   });
   input.addEventListener('change', () => commit(Number(input.value)));
-  const down = button('−', () => commit(Number(input.value) - 1), 'st-step');
+  const down = button('−', () => commit(Number(input.value) - step), 'st-step');
   down.setAttribute('aria-label', `${label} down`);
-  const up = button('+', () => commit(Number(input.value) + 1), 'st-step');
+  const up = button('+', () => commit(Number(input.value) + step), 'st-step');
   up.setAttribute('aria-label', `${label} up`);
   return row(label, down, input, up, el('span', 'st-unit', unit));
 }

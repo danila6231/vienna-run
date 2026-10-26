@@ -3,8 +3,10 @@ import { createRng } from './rng';
 import { generateItems } from './spawner';
 import { isGood, type ItemType } from './types';
 
-export type Preset = 'easy' | 'normal' | 'hard' | 'custom';
+export type Preset = 'easy' | 'normal' | 'hard' | 'impossible' | 'custom';
 export type Mode = 'random' | 'fixed';
+/** Classic: obstacles here and there between the rewards. Walls: rows of obstacles with one gap that keeps moving. */
+export type ObstacleStyle = 'classic' | 'walls';
 /** How the street's houses and landmarks are drawn: 3D models, or the lighter paper cutouts as a fallback. */
 export type StreetLook = '3d' | 'paper';
 
@@ -17,6 +19,9 @@ export interface Settings {
   mode: Mode;
   obstacles: number;
   treats: number;
+  obstacleStyle: ObstacleStyle;
+  /** The street can always be dodged with swipes at least this far apart (ms); fewer obstacles if need be. */
+  fastestMoveMs: number;
   /** Picks the street for "Same for everyone"; change it for a different one. */
   seed: number;
   points: Record<ItemType, number>;
@@ -39,22 +44,28 @@ export interface Features {
   leaderboard: boolean;
 }
 
-type Difficulty = Pick<Settings, 'roundSeconds' | 'startSpeedKmh' | 'endSpeedKmh' | 'mode' | 'obstacles' | 'treats'>;
-const DIFFICULTY_KEYS: ReadonlyArray<keyof Difficulty> = ['roundSeconds', 'startSpeedKmh', 'endSpeedKmh', 'mode', 'obstacles', 'treats'];
+type Difficulty = Pick<Settings, 'roundSeconds' | 'startSpeedKmh' | 'endSpeedKmh' | 'mode' | 'obstacles' | 'treats' | 'obstacleStyle' | 'fastestMoveMs'>;
+const DIFFICULTY_KEYS: ReadonlyArray<keyof Difficulty> = ['roundSeconds', 'startSpeedKmh', 'endSpeedKmh', 'mode', 'obstacles', 'treats', 'obstacleStyle', 'fastestMoveMs'];
 
-/** Normal is the booth's round (its share code of 2026-10-26); all three keep the same 45 s and 65 rewards. */
+/**
+ * Normal is the booth's round (its share code of 2026-10-26); all four keep the same 45 s and 65 rewards.
+ * Impossible starts like Hard and ends at 400 km/h, weaving through bomb walls that close in towards the finish.
+ */
 export const PRESETS: Record<Exclude<Preset, 'custom'>, Difficulty> = {
-  easy: { roundSeconds: 45, startSpeedKmh: 70, endSpeedKmh: 110, mode: 'fixed', obstacles: 50, treats: 65 },
-  normal: { roundSeconds: 45, startSpeedKmh: 90, endSpeedKmh: 150, mode: 'fixed', obstacles: 80, treats: 65 },
-  hard: { roundSeconds: 45, startSpeedKmh: 110, endSpeedKmh: 170, mode: 'fixed', obstacles: 80, treats: 65 },
+  easy: { roundSeconds: 45, startSpeedKmh: 70, endSpeedKmh: 110, mode: 'fixed', obstacles: 50, treats: 65, obstacleStyle: 'classic', fastestMoveMs: 300 },
+  normal: { roundSeconds: 45, startSpeedKmh: 90, endSpeedKmh: 150, mode: 'fixed', obstacles: 80, treats: 65, obstacleStyle: 'classic', fastestMoveMs: 300 },
+  hard: { roundSeconds: 45, startSpeedKmh: 110, endSpeedKmh: 170, mode: 'fixed', obstacles: 80, treats: 65, obstacleStyle: 'classic', fastestMoveMs: 300 },
+  impossible: { roundSeconds: 45, startSpeedKmh: 120, endSpeedKmh: 400, mode: 'fixed', obstacles: 220, treats: 65, obstacleStyle: 'walls', fastestMoveMs: 300 },
 };
+const PRESET_NAMES = Object.keys(PRESETS) as Array<Exclude<Preset, 'custom'>>;
 
 export const LIMITS = {
-  roundSeconds: [20, 90],
-  startSpeedKmh: [30, 120],
-  endSpeedKmh: [30, 170],
-  obstacles: [0, 80],
-  treats: [5, 80],
+  roundSeconds: [10, 180],
+  startSpeedKmh: [30, 400],
+  endSpeedKmh: [30, 400],
+  obstacles: [0, 600],
+  treats: [0, 300],
+  fastestMoveMs: [150, 1000],
   seed: [1, 9999],
   goodPoints: [1, 50],
   badPoints: [-50, -1],
@@ -95,7 +106,7 @@ export function applyPreset(s: Settings, preset: Exclude<Preset, 'custom'>): Set
 
 /** The named preset whose difficulty values all match, otherwise 'custom'. */
 export function detectPreset(s: Settings): Preset {
-  for (const p of ['easy', 'normal', 'hard'] as const) {
+  for (const p of PRESET_NAMES) {
     if (DIFFICULTY_KEYS.every((k) => s[k] === PRESETS[p][k])) return p;
   }
   return 'custom';
@@ -142,6 +153,8 @@ export function sanitize(raw: unknown): Settings {
     mode: r.mode === 'fixed' || r.mode === 'random' ? r.mode : d.mode,
     obstacles: clamp(r.obstacles, LIMITS.obstacles, d.obstacles),
     treats: clamp(r.treats, LIMITS.treats, d.treats),
+    obstacleStyle: r.obstacleStyle === 'classic' || r.obstacleStyle === 'walls' ? r.obstacleStyle : d.obstacleStyle,
+    fastestMoveMs: clamp(r.fastestMoveMs, LIMITS.fastestMoveMs, d.fastestMoveMs),
     seed: clamp(r.seed, LIMITS.seed, d.seed),
     points,
     tiers: sanitizeTiers(r.tiers) ?? d.tiers,
@@ -197,7 +210,7 @@ export function warnings(s: Settings): string[] {
   }
   const avg = (n: number) => Math.round(n / FIT_SEEDS.length);
   const notes: string[] = [];
-  if (avg(bad) < s.obstacles * 0.9) notes.push(`Only about ${avg(bad)} of ${s.obstacles} obstacles fit in a round this long at these speeds.`);
+  if (avg(bad) < s.obstacles * 0.9) notes.push(`Only about ${avg(bad)} of ${s.obstacles} obstacles fit in a round this long at these speeds and this fastest move.`);
   if (avg(good) < s.treats * 0.9) notes.push(`Only about ${avg(good)} of ${s.treats} rewards fit in a round this long at these speeds; the rest are left out.`);
   return notes;
 }
@@ -218,7 +231,16 @@ export function buildConfig(s: Settings, base: GameConfig = CONFIG): GameConfig 
     speedRamp: end / start - 1,
     runLength,
     items,
-    spawn: { firstAt: Math.round(start * 2.4), finishClear: Math.round(end * 2.4), obstacles: s.obstacles, treats: s.treats, mode: s.mode, seed: s.seed },
+    spawn: {
+      firstAt: Math.round(start * 2.4),
+      finishClear: Math.round(end * 2.4),
+      obstacles: s.obstacles,
+      treats: s.treats,
+      mode: s.mode,
+      seed: s.seed,
+      style: s.obstacleStyle,
+      fastestMove: s.fastestMoveMs / 1000,
+    },
     questions: {
       ...base.questions,
       enabled: s.questions.enabled,

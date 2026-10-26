@@ -17,8 +17,19 @@ export interface GameConfig {
   /**
    * Item layout: exact counts in 'fixed' mode, targets that vary ±35% per round in 'random' mode.
    * `seed` picks the street in 'fixed' mode (see layoutSeed in core/spawner.ts).
+   * `style` lays the obstacles out here and there ('classic') or as rows with one moving gap ('walls'); either way
+   * the street can be dodged with swipes `fastestMove` seconds apart (see core/dodge.ts).
    */
-  spawn: { firstAt: number; finishClear: number; obstacles: number; treats: number; mode: 'random' | 'fixed'; seed: number };
+  spawn: {
+    firstAt: number;
+    finishClear: number;
+    obstacles: number;
+    treats: number;
+    mode: 'random' | 'fixed';
+    seed: number;
+    style: 'classic' | 'walls';
+    fastestMove: number;
+  };
   collision: { ahead: number; behind: number; laneTolerance: number };
   trayMax: number;
   stumbleSeconds: number;
@@ -64,7 +75,7 @@ export const CONFIG: GameConfig = {
     krampus: { points: -20, good: false },
     bomb: { points: -25, good: false },
   },
-  spawn: { firstAt: 34, finishClear: 36, obstacles: 11, treats: 31, mode: 'random', seed: 1 },
+  spawn: { firstAt: 34, finishClear: 36, obstacles: 11, treats: 31, mode: 'random', seed: 1, style: 'classic', fastestMove: 0.3 },
   collision: { ahead: 0.8, behind: 1.0, laneTolerance: 0.5 },
   // More than two rewards stacked above the baton hides the road ahead.
   trayMax: 2,

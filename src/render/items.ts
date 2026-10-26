@@ -7,7 +7,8 @@ import * as P from './placeholders/paint';
 import { fitSquare } from './sizing';
 
 export interface ItemsLayer {
-  sync(run: Run, px: number): void;
+  /** Draws the run's items up to `ahead` metres in front of the runner. */
+  sync(run: Run, px: number, ahead: number): void;
   reset(): void;
   material(type: RoadType): THREE.SpriteMaterial;
   /** Width ÷ height of the item's image, so other layers can size copies without stretching them. */
@@ -88,11 +89,11 @@ export function createItems(scene: THREE.Scene, art: ArtSet, laneWidth: number):
     reset() {
       for (const id of [...live.keys()]) give(id);
     },
-    sync(run, px) {
+    sync(run, px, ahead) {
       for (const it of run.items) {
         const r = it.at - run.dist;
         const done = it.state !== 'live' && it.t > 0.35;
-        if (r > 230 || r < -12 || done) {
+        if (r > ahead || r < -12 || done) {
           give(it.id);
           continue;
         }

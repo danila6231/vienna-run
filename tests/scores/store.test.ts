@@ -65,6 +65,13 @@ describe('ScoreStore', () => {
     expect(store.log()[0]).toMatchObject({ id, score: 80, name: 'Anna', final: true, uploaded: false });
   });
 
+  it('keeps Impossible rounds through a reload', () => {
+    const storage = memoryStorage();
+    const first = make({ storage });
+    first.finalize(first.addRound({ ...round(7000), preset: 'impossible' }));
+    expect(make({ storage }).log()).toEqual([expect.objectContaining({ score: 7000, preset: 'impossible' })]);
+  });
+
   it('survives a reload and uploads once the connection returns', async () => {
     const sb = fakeSupabase();
     const storage = memoryStorage();

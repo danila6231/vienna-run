@@ -9,14 +9,19 @@ create table if not exists public.vienna_run_scores (
   id uuid primary key,
   created_at timestamptz not null,
   board text not null check (board ~ '^[a-z0-9-]{1,24}$'),
-  score integer not null check (score between 0 and 5000),
+  score integer not null check (score between 0 and 20000),
   name text check (name is null or name ~ '^[A-Za-z0-9 _-]{1,12}$'),
-  preset text not null check (preset in ('easy', 'normal', 'hard', 'custom')),
+  preset text not null check (preset in ('easy', 'normal', 'hard', 'impossible', 'custom')),
   lang text not null check (lang in ('vi', 'en')),
   questions_on boolean not null,
   device text not null check (char_length(device) <= 40),
   inserted_at timestamptz not null default now()
 );
+-- Tables made before Impossible (and its higher scores) get the same two rules.
+alter table public.vienna_run_scores drop constraint if exists vienna_run_scores_preset_check;
+alter table public.vienna_run_scores add constraint vienna_run_scores_preset_check check (preset in ('easy', 'normal', 'hard', 'impossible', 'custom'));
+alter table public.vienna_run_scores drop constraint if exists vienna_run_scores_score_check;
+alter table public.vienna_run_scores add constraint vienna_run_scores_score_check check (score between 0 and 20000);
 create index if not exists vienna_run_scores_board_score_idx on public.vienna_run_scores (board, score desc, created_at);
 alter table public.vienna_run_scores enable row level security;
 revoke all on table public.vienna_run_scores from anon, authenticated;

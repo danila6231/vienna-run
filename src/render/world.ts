@@ -6,6 +6,7 @@ import { createBuildingSet } from './buildings';
 import { createItems } from './items';
 import { pixelRatioFor } from './quality';
 import { createLandmarks } from './landmarks';
+import { reach } from './reach';
 import { createRunner } from './runner';
 import { createSky } from './sky';
 import { createStreet } from './street';
@@ -51,7 +52,9 @@ export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: n
       street.update(run.dist, run.route);
       landmarks.update(run.dist, time, run.route);
       px = runner.update(run, frameDt);
-      items.sync(run, px);
+      const view = reach(run.speed);
+      sky.setReach(view);
+      items.sync(run, px, view.items);
       const sx = shakeT > 0 ? (Math.random() - 0.5) * shakeT * 1.4 : 0;
       const sy = shakeT > 0 ? (Math.random() - 0.5) * shakeT : 0;
       camera.position.set(px * 0.35 + sx, 4.4 + sy, 8.2);

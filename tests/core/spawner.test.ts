@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CONFIG, type GameConfig } from '../../src/config';
+import { dodgeable } from '../../src/core/dodge';
 import { createRng } from '../../src/core/rng';
-import { buildConfig, defaultSettings } from '../../src/core/settings';
+import { applyPreset, buildConfig, defaultSettings, type Settings } from '../../src/core/settings';
 import { generateItems, layoutSeed, PACE, ROW_CLEAR, timeAt } from '../../src/core/spawner';
 import { isGood, type Item } from '../../src/core/types';
 
@@ -77,14 +79,25 @@ describe('generateItems', () => {
     const bads = counts.map(([b]) => b);
     expect(Math.max(...bads) - Math.min(...bads)).toBeGreaterThanOrEqual(4);
   });
-  it('thins out settings too crowded for a short route so obstacles stay readable', () => {
-    const cfg = withSpawn({ mode: 'fixed', obstacles: 40, treats: 80 }, { runLength: 300 });
+  it('fits as many obstacles as there is road for, leaving rewards out first, every pattern at least 4 m apart', () => {
+    const cfg = withSpawn({ mode: 'fixed', obstacles: 40, treats: 300 }, { runLength: 300 });
     for (const s of seeds.slice(0, 50)) {
       const items = run(s, cfg);
-      expect(bad(items).length).toBeLessThanOrEqual(40);
+      expect(bad(items)).toHaveLength(40);
+      expect(good(items).length).toBeLessThan(300);
       const groups = obstacleGroups(items);
-      for (let i = 1; i < groups.length; i++) expect(groups[i][0].at - groups[i - 1][0].at).toBeGreaterThan(9);
+      for (let i = 1; i < groups.length; i++) expect(groups[i][0].at - groups[i - 1][0].at).toBeGreaterThan(2);
     }
+  });
+  it('no longer leaves obstacles out of a busy round to keep them half a second apart', () => {
+    const cfg = buildConfig({ ...applyPreset(defaultSettings(), 'hard'), obstacles: 300 });
+    const items = run(layoutSeed(cfg), cfg);
+    expect(bad(items)).toHaveLength(300);
+    expect(good(items)).toHaveLength(65);
+  });
+  it('can always be dodged at the fastest move, however busy', () => {
+    const cfg = buildConfig({ ...defaultSettings(), startSpeedKmh: 400, endSpeedKmh: 400, obstacles: 600, treats: 0 });
+    for (const s of seeds.slice(0, 10)) expect(dodgeable(cfg, run(s, cfg), cfg.spawn.fastestMove)).toBe(true);
   });
 });
 
@@ -193,6 +206,92 @@ describe('question rows', () => {
   });
 });
 
+describe('the classic streets', () => {
+  const fingerprint = (items: Item[]) => createHash('sha1').update(JSON.stringify(items.map((i) => [Math.round(i.at * 1000), i.lane, i.type]))).digest('hex').slice(0, 12);
+  it.each([['easy', 121, '9c32582e966b'], ['normal', 151, '4094c064434b'], ['hard', 151, 'ed541a88bc06']] as const)('are the same as before Impossible came (%s)', (preset, count, print) => {
+    const cfg = buildConfig(applyPreset(defaultSettings(), preset));
+    const items = run(layoutSeed(cfg), cfg);
+    expect(items).toHaveLength(count);
+    expect(fingerprint(items)).toBe(print);
+  });
+});
+
+describe('bomb walls', () => {
+  const impossible = (over: Partial<Settings> = {}) => buildConfig({ ...applyPreset(defaultSettings(), 'impossible'), ...over });
+  const booth = impossible();
+  const boothRun = (seed: number) => run(seed, booth);
+  /** The obstacle rows of one street, split into the first and the last third of the round. */
+  const thirds = (cfg: GameConfig, items: Item[]) => {
+    const groups = obstacleGroups(items);
+    const t = (g: Item[]) => timeAt(cfg, g[0].at);
+    const end = t(groups[groups.length - 1]);
+    return { early: groups.filter((g) => t(g) < end / 3), late: groups.filter((g) => t(g) > (2 * end) / 3), t };
+  };
+
+  it('is deterministic for a seed', () => {
+    expect(boothRun(4)).toEqual(boothRun(4));
+  });
+  it.each([
+    ['Impossible', booth],
+    ['Impossible, random counts', impossible({ mode: 'random' })],
+    ['400 km/h all the way, 600 obstacles, a swipe every 0.15 s', impossible({ startSpeedKmh: 400, obstacles: 600, fastestMoveMs: 150 })],
+    ['slow, with a swipe at most once a second', impossible({ startSpeedKmh: 30, endSpeedKmh: 60, obstacles: 100, fastestMoveMs: 1000 })],
+    ['three minutes long', impossible({ roundSeconds: 180, obstacles: 600 })],
+  ])('can always be dodged at its fastest move (%s)', (_name, cfg) => {
+    for (const s of seeds.slice(0, 15)) expect(dodgeable(cfg, run(s, cfg), cfg.spawn.fastestMove)).toBe(true);
+  });
+  it('places the asked rewards and about as many obstacles as asked', () => {
+    for (const s of seeds.slice(0, 20)) {
+      const items = boothRun(s);
+      expect(good(items)).toHaveLength(booth.spawn.treats);
+      expect(bad(items).length).toBeGreaterThan(booth.spawn.obstacles * 0.9);
+      expect(bad(items).length).toBeLessThanOrEqual(booth.spawn.obstacles);
+    }
+  });
+  it('gets harder towards the finish: rows closer together, and more of them two lanes wide', () => {
+    for (const s of seeds.slice(0, 20)) {
+      const { early, late, t } = thirds(booth, boothRun(s));
+      const gap = (g: Item[][]) => (t(g[g.length - 1]) - t(g[0])) / (g.length - 1);
+      expect(gap(late)).toBeLessThan(gap(early) * 0.6);
+      const wide = (g: Item[][]) => g.filter((x) => x.length === 2).length / g.length;
+      expect(wide(late)).toBeGreaterThan(wide(early));
+      expect(wide(late)).toBeGreaterThan(0.8);
+    }
+  });
+  it('keeps the player weaving: the gap in a two-lane wall moves on more often than not', () => {
+    for (const s of seeds.slice(0, 20)) {
+      const walls = obstacleGroups(boothRun(s)).filter((g) => g.length === 2);
+      const gap = (g: Item[]) => [-1, 0, 1].find((l) => !g.some((o) => o.lane === l));
+      const moved = walls.slice(1).filter((g, i) => gap(g) !== gap(walls[i])).length;
+      expect(moved / (walls.length - 1)).toBeGreaterThan(0.5);
+    }
+  });
+  it('never blocks all three lanes at once', () => {
+    for (const s of seeds.slice(0, 20)) for (const g of obstacleGroups(boothRun(s))) expect(new Set(g.map((o) => o.lane)).size).toBeLessThan(3);
+  });
+  it('never puts a reward on top of an obstacle', () => {
+    for (const s of seeds.slice(0, 20)) {
+      const items = boothRun(s);
+      for (const r of good(items)) for (const o of bad(items)) if (o.lane === r.lane) expect(Math.abs(o.at - r.at)).toBeGreaterThanOrEqual(2);
+    }
+  });
+  it('keeps the start, the finish and the road around the ❓ rows clear', () => {
+    for (const s of seeds.slice(0, 20)) {
+      const items = boothRun(s);
+      const rows = [...new Set(asks(items).map((i) => i.at))];
+      expect(rows).toHaveLength(2);
+      for (const it of items) {
+        if (it.type === 'question') continue;
+        expect(it.at).toBeGreaterThanOrEqual(booth.spawn.firstAt);
+        for (const r of rows) {
+          if (it.at < r) expect(timeAt(booth, r) - timeAt(booth, it.at)).toBeGreaterThan(ROW_CLEAR.before * 0.9);
+          else expect(timeAt(booth, it.at) - timeAt(booth, r)).toBeGreaterThan(ROW_CLEAR.after * 0.9);
+        }
+      }
+    }
+  });
+});
+
 describe('timeAt', () => {
   it('matches the run: speed ramping up evenly with distance', () => {
     const cfg = buildConfig(defaultSettings());
@@ -210,5 +309,13 @@ describe('layoutSeed', () => {
     expect(layoutSeed(buildConfig({ ...s, treats: s.treats - 1 }))).not.toBe(seed);
     expect(layoutSeed(buildConfig({ ...s, roundSeconds: s.roundSeconds + 1 }))).not.toBe(seed);
     expect(layoutSeed(buildConfig({ ...s, startSpeedKmh: s.startSpeedKmh - 10 }))).not.toBe(seed);
+  });
+  it('changes with the obstacle style, and for bomb walls with the fastest move', () => {
+    const s = defaultSettings();
+    const seed = layoutSeed(buildConfig(s));
+    expect(layoutSeed(buildConfig({ ...s, fastestMoveMs: 500 }))).toBe(seed);
+    const walls = layoutSeed(buildConfig({ ...s, obstacleStyle: 'walls' }));
+    expect(walls).not.toBe(seed);
+    expect(layoutSeed(buildConfig({ ...s, obstacleStyle: 'walls', fastestMoveMs: 500 }))).not.toBe(walls);
   });
 });

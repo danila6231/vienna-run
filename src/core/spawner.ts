@@ -1,14 +1,13 @@
 import type { GameConfig } from '../config';
+import { DodgeTrack, findDodge, laneAlong, makeDodgeable } from './dodge';
 import { pick, randRange, shuffle, type Rng } from './rng';
 import { BAD_TYPES, type Item, type Lane, type QuestionLevel, type RoadType } from './types';
 
 const LANES: readonly Lane[] = [-1, 0, 1];
 // Cheap rewards appear more often than the piano.
 const GOOD_WEIGHTED: readonly RoadType[] = ['piano', 'violin', 'violin', 'sheet', 'sheet', 'sheet', 'notes', 'notes', 'notes'];
-/** Closest two patterns may sit on average, in metres, so items never pile up. */
-export const MIN_PATTERN_SPACING = 14;
-/** Average time between obstacle patterns at top speed, at least, so every obstacle stays readable and dodgeable. */
-export const MIN_OBSTACLE_SECONDS = 0.5;
+/** Closest two patterns may sit on average, in metres, so items never pile up (an item is 1.7 m across). */
+export const MIN_PATTERN_SPACING = 4;
 /** Seconds of road kept free of obstacles and rewards before and after each ❓ row. */
 export const ROW_CLEAR = { before: 0.75, after: 1 };
 /** What keeps a round from being lazy: */
@@ -28,6 +27,19 @@ export const PACE = {
   /** Never more rewards than this in a row in one lane. */
   maxLine: 3,
 };
+/** Bomb walls: rows of obstacles that leave one gap, closing in towards the finish. */
+export const WALLS = {
+  /** Rows come this many times as often (in time) at the finish as at the start. */
+  denser: 3,
+  /** Share of rows two lanes wide: the late ones, and fewer and fewer of the early ones. */
+  wide: 0.8,
+  /** Chance the gap moves on from one row to the next, when it can be reached in time… */
+  move: 0.8,
+  /** …and, moving from a side lane, chance it jumps straight to the other side. */
+  far: 0.3,
+  /** Share of rewards on a way through; the rest lie anywhere, some only for the brave. */
+  onWay: 0.4,
+};
 
 type Pattern = { kind: 'obstacle'; size: 1 | 2; reward: boolean } | { kind: 'line' } | { kind: 'zigzag' } | { kind: 'single' };
 
@@ -37,6 +49,12 @@ const clampLane = (l: number): Lane => Math.max(-1, Math.min(1, l)) as Lane;
 export function timeAt(cfg: GameConfig, d: number): number {
   const r = cfg.speedRamp;
   return r > 1e-9 ? (cfg.runLength / (cfg.baseSpeed * r)) * Math.log(1 + (r * d) / cfg.runLength) : d / cfg.baseSpeed;
+}
+
+/** Metres from the start line after `t` seconds: the inverse of timeAt. */
+export function distAt(cfg: GameConfig, t: number): number {
+  const r = cfg.speedRamp;
+  return r > 1e-9 ? (cfg.runLength / r) * (Math.exp((t * cfg.baseSpeed * r) / cfg.runLength) - 1) : t * cfg.baseSpeed;
 }
 
 /** Where the ❓ rows cross the road: halfway (Level 1) and `lastRowLead` seconds before the finish line (Level 2). */
@@ -56,20 +74,24 @@ export function questionRows(cfg: GameConfig): Array<{ at: number; level: Questi
  * 'random' mode first draws this round's counts within ±35% of those targets.
  * Never blocks all three lanes, keeps the start and the finish clear, and thins out crowded settings.
  * With questions on, two rows of ❓ cross all three lanes, with a little empty road around each.
- * Keeps the player moving (see PACE): no lane stays clear for long, the escape lane moves on, and rewards lead into it.
+ * Classic obstacles keep the player moving (see PACE): no lane stays clear for long, the escape lane moves on, and
+ * rewards lead into it. Bomb walls are rows with one gap that keeps moving, closer and closer together (see WALLS).
+ * Either way the street can be dodged with swipes `spawn.fastestMove` seconds apart: obstacles that would make that
+ * impossible are left out (see makeDodgeable).
  */
 export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   const { firstAt, finishClear, mode } = cfg.spawn;
   const items: Item[] = [];
   let id = 0;
-  const add = (at: number, lane: Lane, type: RoadType, level?: QuestionLevel) => {
-    items.push({ id: ++id, at, lane, type, state: 'live', t: 0, level });
+  const add = (at: number, lane: Lane, type: RoadType, level?: QuestionLevel): Item => {
+    const it: Item = { id: ++id, at, lane, type, state: 'live', t: 0, level };
+    items.push(it);
+    return it;
   };
   const rows = questionRows(cfg);
   for (const r of rows) for (const lane of LANES) add(r.at, lane, 'question', r.level);
   // The playable stretch minus the empty road around the rows: patterns go into these segments.
   const speedAt = (d: number) => cfg.baseSpeed * (1 + cfg.speedRamp * (d / cfg.runLength));
-  const endSpeed = speedAt(cfg.runLength);
   // The finish is kept clear, unless the last row stands in that stretch: then items run on up to its run-up.
   let lastAt = cfg.runLength - finishClear;
   const finalRow = rows.at(-1);
@@ -87,6 +109,11 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
   const vary = (n: number) => Math.max(0, mode === 'fixed' ? Math.round(n) : Math.round(n * randRange(rng, 0.65, 1.35)));
   let bad = vary(cfg.spawn.obstacles);
   let good = vary(cfg.spawn.treats);
+  const dodgeableOnly = () => makeDodgeable(cfg, items.sort((a, b) => a.at - b.at), cfg.spawn.fastestMove);
+  if (cfg.spawn.style === 'walls') {
+    layWalls(rng, cfg, segments, bad, good, add);
+    return dodgeableOnly();
+  }
 
   // 1. Obstacle patterns: one or two obstacles side by side; a single one may carry a reward in its free lane.
   const patterns: Pattern[] = [];
@@ -107,12 +134,8 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
       good--;
     }
   }
-  // 3. Too crowded for this route at its top speed? Drop reward patterns first, then obstacles. Rewards may sit
-  // between obstacles; it is the obstacles that need time apart.
-  const obstacleSpacing = Math.max(MIN_PATTERN_SPACING, MIN_OBSTACLE_SECONDS * endSpeed);
-  const crowded = () =>
-    span / patterns.length < MIN_PATTERN_SPACING || span / patterns.filter((p) => p.kind === 'obstacle').length < obstacleSpacing;
-  while (patterns.length > 0 && crowded()) {
+  // 3. Too crowded for this route? Drop reward patterns first, then obstacles.
+  while (patterns.length > 0 && span / patterns.length < MIN_PATTERN_SPACING) {
     let drop = patterns.length - 1;
     for (let i = patterns.length - 1; i >= 0; i--) {
       if (patterns[i].kind !== 'obstacle') {
@@ -243,7 +266,82 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
       reward(at, lane, pick(rng, GOOD_WEIGHTED));
     }
   });
-  return items.sort((a, b) => a.at - b.at);
+  return dodgeableOnly();
+}
+
+/**
+ * Bomb walls along the segments: rows of obstacles, more and more often and more and more of them two lanes wide,
+ * the gap moving on whenever it can still be reached (checked row by row with DodgeTrack), then the rewards.
+ */
+function layWalls(
+  rng: Rng,
+  cfg: GameConfig,
+  segments: ReadonlyArray<readonly [number, number]>,
+  bad: number,
+  good: number,
+  add: (at: number, lane: Lane, type: RoadType) => Item,
+): void {
+  // The segments in seconds since the start; `at(u)` is the spot a share `u` of the way along them, in time.
+  const spans = segments.map(([a, b]) => [timeAt(cfg, a), timeAt(cfg, b)] as const);
+  const total = spans.reduce((n, [a, b]) => n + b - a, 0);
+  const at = (u: number) => {
+    let left = Math.min(1, Math.max(0, u)) * total;
+    for (const [a, b] of spans) {
+      if (left <= b - a) return distAt(cfg, a + left);
+      left -= b - a;
+    }
+    return distAt(cfg, spans[spans.length - 1][1]);
+  };
+
+  // 1. Rows, `k + 1` times as dense at the finish as at the start, with exactly `bad` obstacles between them:
+  // the late rows are the wide ones.
+  const k = WALLS.denser - 1;
+  const count = Math.min(bad, Math.max(Math.ceil(bad / 2), Math.round(bad / (1 + WALLS.wide))));
+  const rows = Array.from({ length: count }, (_, j) => {
+    const c = ((1 + k / 2) * (j + 0.5 + randRange(rng, -0.3, 0.3))) / count;
+    const u = k > 0 ? (Math.sqrt(1 + 2 * k * c) - 1) / k : c;
+    return { u, wide: false, key: u + randRange(rng, -0.3, 0.3) };
+  });
+  for (const r of [...rows].sort((a, b) => b.key - a.key).slice(0, bad - count)) r.wide = true;
+
+  // 2. Front to back, each row only where the runner can still get through it.
+  const track = new DodgeTrack(cfg, cfg.spawn.fastestMove);
+  const obstacles: Item[] = [];
+  const others = (l: Lane) => LANES.filter((x) => x !== l);
+  let gap: Lane = 0;
+  for (const row of rows) {
+    const d = at(row.u);
+    // Where the gap may go: the next lane first, now and then straight across.
+    const moves: Lane[] = shuffle(rng, others(gap)).sort((a, b) => Math.abs(a - gap) - Math.abs(b - gap));
+    if (Math.abs(moves[1] - gap) === 2 && rng() < WALLS.far) moves.reverse();
+    const moving = rng() < WALLS.move;
+    const wide: Lane | undefined = row.wide ? (moving ? [...moves, gap] : [gap, ...moves]).find((f) => track.tryRow(d, others(f))) : undefined;
+    if (wide !== undefined) {
+      for (const l of others(wide)) obstacles.push(add(d, l, pick(rng, BAD_TYPES)));
+      gap = wide;
+      continue;
+    }
+    // A single obstacle, mostly right in the gap so far, so the runner still has to move.
+    const single = (moving ? [gap, ...moves] : [...moves, gap]).find((l) => track.tryRow(d, [l]));
+    if (single === undefined) continue;
+    obstacles.push(add(d, single, pick(rng, BAD_TYPES)));
+    if (single === gap) gap = gap === 0 ? pick(rng, [-1, 1] as const) : 0;
+  }
+
+  // 3. Rewards anywhere in time, some on a way through, never on top of an obstacle or another reward.
+  const way = laneAlong(cfg, findDodge(cfg, obstacles, cfg.spawn.fastestMove) ?? []);
+  const rewards: Item[] = [];
+  const free = (d: number, lane: Lane) =>
+    !obstacles.some((o) => o.lane === lane && Math.abs(o.at - d) < 2.5) && !rewards.some((r) => r.lane === lane && Math.abs(r.at - d) < 2);
+  for (let n = 0; n < good; n++) {
+    for (let tries = 0; tries < 8; tries++) {
+      const d = at(rng());
+      const lane = rng() < WALLS.onWay ? way(d) : pick(rng, LANES);
+      if (!free(d, lane)) continue;
+      rewards.push(add(d, lane, pick(rng, GOOD_WEIGHTED)));
+      break;
+    }
+  }
 }
 
 /**
@@ -253,7 +351,8 @@ export function generateItems(rng: Rng, cfg: GameConfig): Item[] {
  */
 export function layoutSeed(cfg: GameConfig): number {
   const { runLength, spawn: s, questions: q } = cfg;
-  const key = JSON.stringify([s.seed, runLength, s.firstAt, s.finishClear, s.obstacles, s.treats, q.enabled]);
+  // Bomb walls depend on the fastest move too; classic streets keep the key they always had.
+  const key = JSON.stringify([s.seed, runLength, s.firstAt, s.finishClear, s.obstacles, s.treats, q.enabled, ...(s.style === 'walls' ? ['walls', s.fastestMove] : [])]);
   // FNV-1a
   let h = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193);

@@ -46,7 +46,7 @@ interface BoardCache {
   all: CachedList;
 }
 
-const PRESET_NAMES: readonly string[] = ['easy', 'normal', 'hard', 'custom'];
+const PRESET_NAMES: readonly string[] = ['easy', 'normal', 'hard', 'impossible', 'custom'];
 
 function isEntry(v: unknown): v is ScoreEntry {
   const e = v as ScoreEntry;

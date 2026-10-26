@@ -42,9 +42,9 @@ describe('migrate-db', () => {
       'create table if not exists public.vienna_run_scores',
       'id uuid primary key',
       "board ~ '^[a-z0-9-]{1,24}$'",
-      'score between 0 and 5000',
+      'score between 0 and 20000',
       "name ~ '^[A-Za-z0-9 _-]{1,12}$'",
-      "preset in ('easy', 'normal', 'hard', 'custom')",
+      "preset in ('easy', 'normal', 'hard', 'impossible', 'custom')",
       "lang in ('vi', 'en')",
       'char_length(device) <= 40',
       'inserted_at timestamptz not null default now()',
@@ -56,5 +56,11 @@ describe('migrate-db', () => {
       "notify pgrst, 'reload schema'",
     ]) expect(SQL).toContain(part);
     expect(SQL).not.toMatch(/grant[^;]*(update|delete)/i);
+  });
+  it('brings a table made before Impossible up to the same rules', () => {
+    for (const rule of ['preset', 'score']) {
+      expect(SQL).toContain(`drop constraint if exists vienna_run_scores_${rule}_check`);
+      expect(SQL).toContain(`add constraint vienna_run_scores_${rule}_check`);
+    }
   });
 });

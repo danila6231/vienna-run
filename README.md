@@ -27,11 +27,15 @@ and bombs, answer two quiz questions (rows of ❓ across the road) for bonus poi
 For now, the **⚙ Settings** button in the top-left corner of the start screen opens the menu with no PIN.
 Set `QUICK_SETTINGS = false` in `src/main.ts` to hide it again: staff then **hold the top-left corner
 for 3 seconds** and enter the PIN (default **2468**; change it in the menu). The menu sets:
-- **Difficulty:** Easy / Normal / Hard presets (all 45 s with 65 rewards: Easy 70→110 km/h and 50 obstacles, Normal
-  90→150 km/h and 80, Hard 110→170 km/h and 80); round length, start and end speed, obstacles and rewards
+- **Difficulty:** Easy / Normal / Hard / Impossible presets (all 45 s with 65 rewards: Easy 70→110 km/h and 50
+  obstacles, Normal 90→150 km/h and 80, Hard 110→170 km/h and 80, Impossible 120→400 km/h and 220 in bomb walls);
+  round length (10–180 s), start and end speed (up to 400 km/h), obstacles (up to 600) and rewards (up to 300)
   per round; "Random each round" or "Same for everyone" (the same street, item for item, in every round and on
   every device with the same settings; a share code copies it to another booth). Change the **layout seed**
-  for a different street.
+  for a different street. **Obstacle style:** Classic (obstacles here and there between the rewards) or **Bomb
+  walls** (rows of obstacles with one gap that keeps moving, closer and closer together towards the finish).
+  **Fastest move needed** (150–1000 ms, default 300): every street can be dodged with swipes no closer together
+  than this; obstacles that would make that impossible are left out.
 - **Points and gifts:** item points, the gift tiers, and whether players see gifts.
 - **Questions:** on/off (on by default), points for a right Level 1 and Level 2 answer (15 and 20), seconds to
   answer. Every player meets two rows of ❓ across all three lanes: halfway (a random Level 1 question) and right
@@ -81,11 +85,17 @@ results screen opens the same lists with the player's own row highlighted.
 - **Points, difficulty, gift tiers:** use the staff settings menu. Defaults: `defaultSettings()` in `src/core/settings.ts` (difficulty, questions) and `src/config.ts` (points, gift tiers); `npm run simulate` shows the score spread for each preset.
 - **Questions:** `src/data/questions.json`, five per level (`"level": 1` or `2`); `answer` is the index of the right
   option. Each player gets one random question per level, with the options shuffled. `npm test` validates the file.
-- **How the street is laid out:** `src/core/spawner.ts`. Items come in patterns (one or two obstacles side by side;
-  three rewards in a line or a zigzag; single rewards), spread evenly; obstacles at least 0.5 s apart on average at top speed. `PACE` holds the rules
+- **How the street is laid out:** `src/core/spawner.ts`. Classic items come in patterns (one or two obstacles side by side;
+  three rewards in a line or a zigzag; single rewards), spread evenly, at least 4 m apart on average. `PACE` holds the rules
   that keep players moving: about half the obstacles leave one way through, the first 8 s only have single obstacles,
   a lane left clear for 1.5 s gets the next obstacle, the escape lane moves on after two obstacles (at most one lane
   at a time), most rewards lead into the next escape lane, and never more than three rewards in a row in one lane.
+  Bomb walls follow `WALLS`: rows three times as frequent at the finish as at the start, the late ones two lanes wide,
+  the gap moving on whenever it can still be reached; rewards lie anywhere, some on a way through.
+- **Always dodgeable:** `src/core/dodge.ts` replays a street step by step the way the game runs it (60 steps per
+  second, the runner's real lane change and hit window) and checks that some series of swipes, never closer together
+  than the fastest move, hits no obstacle. Bomb walls are built row by row with it; any street that fails loses
+  obstacles until it passes. At high speed the view reaches further ahead (`src/render/reach.ts`).
 - **Route and landmarks:** `src/core/route.ts`.
 - **Art:** drop files named as in `docs/ASSET_SPEC.md` into `src/assets/art/`. Anything missing stays a placeholder.
 - **Buildings:** the houses and landmarks are 3D, built in code in `src/render/buildings/` (the paper cards remain as the

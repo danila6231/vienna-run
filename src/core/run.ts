@@ -1,4 +1,5 @@
 import { CONFIG, type GameConfig } from '../config';
+import { inHitWindow } from './dodge';
 import { createRng } from './rng';
 import { buildRoute, type Route } from './route';
 import { applyPoints, questionPoints } from './scoring';
@@ -63,14 +64,15 @@ export class Run {
     const c = this.cfg;
     this.time += dt;
     this.speed = c.baseSpeed * (1 + c.speedRamp * this.progress);
-    this.dist += this.speed * dt;
+    const step = this.speed * dt;
+    this.dist += step;
     if (this.stumble > 0) this.stumble = Math.max(0, this.stumble - dt);
 
     for (const it of this.items) {
       if (it.state !== 'live') continue;
       const r = it.at - this.dist;
       if (r > c.collision.ahead) break; // items are sorted by distance
-      if (r < -c.collision.behind) continue;
+      if (!inHitWindow(r, step, c.collision)) continue;
       if (Math.abs(this.x - it.lane) >= c.collision.laneTolerance) continue;
       it.t = 0;
       if (it.type === 'question') {

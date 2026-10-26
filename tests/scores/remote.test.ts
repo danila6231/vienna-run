@@ -25,6 +25,11 @@ describe('Supabase remote', () => {
     ]);
   });
 
+  it('uploads scores up to 20 000 as they are, and Impossible rounds by name', () => {
+    expect(toRow(entry({ score: 15200, preset: 'impossible' }))).toMatchObject({ score: 15200, preset: 'impossible' });
+    expect(toRow(entry({ score: 30000 })).score).toBe(20000);
+  });
+
   it.each<[string, FetchFn]>([
     ['a server error', async () => json({ message: 'boom' }, 500)],
     ['a missing table', async () => json({ message: 'relation does not exist' }, 404)],
@@ -64,7 +69,7 @@ describe('Supabase remote', () => {
   });
 
   it('only sends values the database accepts', () => {
-    expect(toRow(entry({ score: 99999, name: 'bad<name>', board: 'Bad Board', device: 'd'.repeat(80) }))).toMatchObject({ score: 5000, name: null, board: 'booth', device: 'd'.repeat(40) });
+    expect(toRow(entry({ score: 99999, name: 'bad<name>', board: 'Bad Board', device: 'd'.repeat(80) }))).toMatchObject({ score: 20000, name: null, board: 'booth', device: 'd'.repeat(40) });
     expect(toRow(entry({ score: -5 })).score).toBe(0);
   });
 });

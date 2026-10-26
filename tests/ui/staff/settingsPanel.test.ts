@@ -50,6 +50,24 @@ describe('SettingsPanel', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(root.hidden).toBe(true);
   });
+  it('offers Impossible after Hard: 120 → 400 km/h through bomb walls', () => {
+    const { root, onSave } = setup();
+    click(root, 'Impossible');
+    expect(field(root, 'End speed').value).toBe('400');
+    expect(buttonNamed(root, 'Bomb walls').classList.contains('on')).toBe(true);
+    click(root, 'Save');
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ preset: 'impossible', startSpeedKmh: 120, endSpeedKmh: 400, obstacleStyle: 'walls', fastestMoveMs: 300 }));
+  });
+  it('sets the obstacle style and the fastest move, in steps of 10 ms', () => {
+    const { root, onSave } = setup();
+    click(root, 'Bomb walls');
+    expect(root.querySelector('[data-preset="custom"]')?.classList.contains('on')).toBe(true);
+    type(field(root, 'Fastest move needed'), '450');
+    click(root, 'Fastest move needed up');
+    expect(field(root, 'Fastest move needed').value).toBe('460');
+    click(root, 'Save');
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ obstacleStyle: 'walls', fastestMoveMs: 460 }));
+  });
   it('marks the difficulty Custom as soon as one value changes', () => {
     const { root } = setup();
     type(field(root, 'Obstacles per round'), '13');
@@ -60,9 +78,9 @@ describe('SettingsPanel', () => {
     const { root } = setup();
     const treats = field(root, 'Rewards per round');
     type(treats, '500');
-    expect(treats.value).toBe('80');
+    expect(treats.value).toBe('300');
     click(root, 'Rewards per round up');
-    expect(treats.value).toBe('80');
+    expect(treats.value).toBe('300');
   });
   it('refuses to save settings that cannot work, and says why', () => {
     const { root, onSave } = setup();
@@ -74,7 +92,7 @@ describe('SettingsPanel', () => {
   });
   it('warns, without blocking Save, when the counts cannot fit the round', () => {
     const { root } = setup();
-    type(field(root, 'Round length'), '20');
+    type(field(root, 'Round length'), '10');
     expect(root.querySelector('.st-warnings')?.textContent).toMatch(/rewards fit/);
     expect(buttonNamed(root, 'Save').disabled).toBe(false);
     type(field(root, 'Round length'), '45');

@@ -24,6 +24,6 @@ describe('settings store', () => {
   });
   it('repairs a stored file with bad values instead of rejecting it', () => {
     const s = memory({ [SETTINGS_KEY]: JSON.stringify({ ...defaultSettings(), obstacles: 999, pin: 'abcd' }) });
-    expect(loadSettings(s)).toMatchObject({ obstacles: 80, pin: '2468' });
+    expect(loadSettings(s)).toMatchObject({ obstacles: 600, pin: '2468' });
   });
 });

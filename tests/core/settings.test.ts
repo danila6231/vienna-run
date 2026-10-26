@@ -36,6 +36,16 @@ describe('presets', () => {
     expect(hard).toMatchObject({ preset: 'hard', roundSeconds: 45, startSpeedKmh: 110, endSpeedKmh: 170, obstacles: 80, treats: 65 });
     expect(applyPreset(defaultSettings(), 'easy')).toMatchObject({ roundSeconds: 45, startSpeedKmh: 70, endSpeedKmh: 110, obstacles: 50, treats: 65 });
   });
+  it('add Impossible: 120 → 400 km/h through bomb walls, a swipe needed every 0.3 s at most', () => {
+    const s = applyPreset(defaultSettings(), 'impossible');
+    expect(s).toMatchObject({ preset: 'impossible', roundSeconds: 45, startSpeedKmh: 120, endSpeedKmh: 400, mode: 'fixed', obstacleStyle: 'walls', fastestMoveMs: 300, treats: 65 });
+    expect(s.obstacles).toBeGreaterThan(80);
+    expect(detectPreset(s)).toBe('impossible');
+    expect(warnings(s)).toEqual([]);
+  });
+  it('keep the classic obstacles on Easy, Normal and Hard', () => {
+    for (const p of ['easy', 'normal', 'hard'] as const) expect(applyPreset(defaultSettings(), p).obstacleStyle).toBe('classic');
+  });
   it('turn into Custom once a value is edited', () => {
     const s = { ...applyPreset(defaultSettings(), 'easy'), obstacles: 9 };
     expect(detectPreset(s)).toBe('custom');
@@ -43,6 +53,10 @@ describe('presets', () => {
 });
 
 describe('buildConfig', () => {
+  it('passes the obstacle style and the fastest move (in seconds) to the street', () => {
+    const cfg = buildConfig({ ...defaultSettings(), obstacleStyle: 'walls', fastestMoveMs: 250 });
+    expect(cfg.spawn).toMatchObject({ style: 'walls', fastestMove: 0.25 });
+  });
   it('switches questions off completely: no ❓ rows on the road', () => {
     const cfg = buildConfig({ ...defaultSettings(), questions: { ...defaultSettings().questions, enabled: false } });
     expect(cfg.questions.enabled).toBe(false);
@@ -86,9 +100,25 @@ describe('sanitize', () => {
   });
   it('clamps values into range and keeps end speed ≥ start speed', () => {
     const s = sanitize({ ...defaultSettings(), roundSeconds: 500, startSpeedKmh: 80, endSpeedKmh: 40, obstacles: -3 });
-    expect(s.roundSeconds).toBe(90);
+    expect(s.roundSeconds).toBe(180);
     expect(s.endSpeedKmh).toBe(80);
     expect(s.obstacles).toBe(0);
+  });
+  it('lets a round go up to 400 km/h with 600 obstacles and 300 rewards, and no further', () => {
+    const top = sanitize({ ...defaultSettings(), roundSeconds: 10, startSpeedKmh: 400, endSpeedKmh: 400, obstacles: 600, treats: 0 });
+    expect(top).toMatchObject({ roundSeconds: 10, startSpeedKmh: 400, endSpeedKmh: 400, obstacles: 600, treats: 0 });
+    const over = sanitize({ ...defaultSettings(), roundSeconds: 9, startSpeedKmh: 900, endSpeedKmh: 900, obstacles: 9999, treats: 9999 });
+    expect(over).toMatchObject({ roundSeconds: 10, startSpeedKmh: 400, endSpeedKmh: 400, obstacles: 600, treats: 300 });
+  });
+  it('keeps the fastest move between 150 ms and 1 s and the obstacle style known', () => {
+    expect(sanitize({ ...defaultSettings(), fastestMoveMs: 20 }).fastestMoveMs).toBe(150);
+    expect(sanitize({ ...defaultSettings(), fastestMoveMs: 5000 }).fastestMoveMs).toBe(1000);
+    expect(sanitize({ ...defaultSettings(), obstacleStyle: 'walls' }).obstacleStyle).toBe('walls');
+    expect(sanitize({ ...defaultSettings(), obstacleStyle: 'maze' }).obstacleStyle).toBe('classic');
+  });
+  it('reads settings saved before Impossible came as they were', () => {
+    const { obstacleStyle: _style, fastestMoveMs: _move, ...old } = applyPreset(defaultSettings(), 'hard');
+    expect(sanitize(old)).toMatchObject({ preset: 'hard', obstacleStyle: 'classic', fastestMoveMs: 300 });
   });
   it('re-detects the preset instead of trusting the stored label', () => {
     expect(sanitize({ ...applyPreset(defaultSettings(), 'normal'), preset: 'hard' }).preset).toBe('normal');
@@ -176,8 +206,8 @@ describe('warnings', () => {
     expect(w.join(' ')).toMatch(/about \d+ of 65 rewards fit/);
   });
   it('explain when too many items are asked for', () => {
-    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 20 });
-    expect(w.join(' ')).toMatch(/of 80 obstacles fit/);
-    expect(w.join(' ')).toMatch(/of 65 rewards fit/);
+    const w = warnings({ ...applyPreset(defaultSettings(), 'normal'), roundSeconds: 10, obstacles: 600, treats: 300 });
+    expect(w.join(' ')).toMatch(/of 600 obstacles fit/);
+    expect(w.join(' ')).toMatch(/of 300 rewards fit/);
   });
 });

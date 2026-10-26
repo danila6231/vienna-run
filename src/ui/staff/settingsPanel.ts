@@ -31,7 +31,7 @@ const difficulty: Section = {
   title: 'Difficulty',
   render({ draft: d, edit }) {
     const presets = el('div', 'st-choice');
-    for (const p of ['easy', 'normal', 'hard'] as const) {
+    for (const p of ['easy', 'normal', 'hard', 'impossible'] as const) {
       const b = button(p[0].toUpperCase() + p.slice(1), () => edit((x) => Object.assign(x, applyPreset(x, p)), true));
       b.dataset.preset = p;
       presets.append(b);
@@ -48,8 +48,11 @@ const difficulty: Section = {
       choice('Item layout', [{ value: 'random', label: 'Random each round' }, { value: 'fixed', label: 'Same for everyone' }] as const, d.mode, (v) => edit((x) => { x.mode = v; })),
       numberField('Obstacles per round', d.obstacles, LIMITS.obstacles, (v) => edit((x) => { x.obstacles = v; })),
       numberField('Rewards per round', d.treats, LIMITS.treats, (v) => edit((x) => { x.treats = v; })),
+      choice('Obstacle style', [{ value: 'classic', label: 'Classic' }, { value: 'walls', label: 'Bomb walls' }] as const, d.obstacleStyle, (v) => edit((x) => { x.obstacleStyle = v; })),
+      numberField('Fastest move needed', d.fastestMoveMs, LIMITS.fastestMoveMs, (v) => edit((x) => { x.fastestMoveMs = v; }), 'ms', 10),
       numberField('Layout seed', d.seed, LIMITS.seed, (v) => edit((x) => { x.seed = v; })),
       note('Random each round: the counts vary by up to a third either way, in new places every round. Same for everyone: exactly these counts in the same places, every round and on every device with these settings. Change the layout seed for a different street (Same for everyone only).'),
+      note('Classic: obstacles here and there between the rewards. Bomb walls: rows of obstacles with one gap that keeps moving, closer and closer together towards the finish. Every street can be dodged with swipes no closer together than the fastest move; obstacles that would make that impossible are left out.'),
     );
     return box;
   },

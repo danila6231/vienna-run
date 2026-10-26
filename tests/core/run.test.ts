@@ -127,6 +127,15 @@ describe('Run', () => {
     expect(run.dist).toBeGreaterThanOrEqual(d);
   });
 
+  it('never runs straight through an item between two steps, even at 432 km/h', () => {
+    // 120 m/s is 2 m per step: the 1.8 m hit window around an item at 50.9 m falls between the steps at 50 and 52 m.
+    const fast = { ...CONFIG, baseSpeed: 120, speedRamp: 0, runLength: 2000 };
+    const bomb = new Run({ seed: 1, config: fast, items: [mk(50.9, 0, 'bomb')] });
+    expect(kinds(advance(bomb, 1))).toContain('hit');
+    const piano = new Run({ seed: 1, config: fast, items: [mk(50.9, 0, 'piano')] });
+    expect(kinds(advance(piano, 1))).toContain('collect');
+  });
+
   it('builds the same run from the same seed', () => {
     const a = new Run({ seed: 5 }), b = new Run({ seed: 5 });
     expect(a.items.map((i) => [i.at, i.lane, i.type])).toEqual(b.items.map((i) => [i.at, i.lane, i.type]));
