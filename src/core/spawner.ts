@@ -8,7 +8,7 @@ const GOOD_WEIGHTED: readonly RoadType[] = ['piano', 'violin', 'violin', 'sheet'
 /** Closest two patterns may sit, in metres, so every obstacle stays readable and dodgeable. */
 export const MIN_PATTERN_SPACING = 14;
 /** Seconds of road kept free of obstacles and rewards before and after each ❓ row. */
-export const ROW_CLEAR = { before: 1.5, after: 2 };
+export const ROW_CLEAR = { before: 0.75, after: 1 };
 
 type Pattern = { kind: 'obstacle'; size: 1 | 2; reward: boolean } | { kind: 'line' } | { kind: 'zigzag' } | { kind: 'single' };
 
