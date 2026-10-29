@@ -1,6 +1,7 @@
 /* Staff screens: corner hold, PIN pad, settings. English, team only. */
 .corner-hold { position: absolute; left: 0; top: 0; width: 12%; height: 12%; z-index: 3; }
-.staff-open { position: absolute; top: 3cqmin; left: 3cqmin; z-index: 3; padding: 1.3cqmin 2.6cqmin; border-radius: 99cqmin; border: 0.3cqmin solid var(--paper); background: rgba(29, 20, 17, 0.6); color: var(--paper); cursor: pointer; touch-action: manipulation; font: 600 2.6cqmin var(--font-body); }
+.staff-open { display: flex; align-items: center; gap: 0.8cqmin; position: absolute; top: 3cqmin; left: 3cqmin; z-index: 3; padding: 1.3cqmin 2.6cqmin; border-radius: 99cqmin; border: 0.3cqmin solid var(--paper); background: rgba(29, 20, 17, 0.6); color: var(--paper); cursor: pointer; touch-action: manipulation; font: 600 2.6cqmin var(--font-body); }
+.staff-open svg { width: 1.1em; height: 1.1em; }
 .staff-screen { position: absolute; inset: 0; z-index: 8; background: rgba(29, 20, 17, 0.72); font-family: var(--font-body); color: var(--ink); }
 .pin-pad { display: grid; place-items: center; }
 .pin-card { padding: 3cqmin 4cqmin; display: grid; gap: 1.6cqmin; justify-items: center; }
