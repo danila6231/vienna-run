@@ -1,6 +1,6 @@
 import type { Tier } from '../config';
 import type { I18n } from '../i18n/i18n';
-import { cleanNameInput, finalName } from '../scores/names';
+import { randomName } from '../scores/names';
 import { el, releaseFocus } from './dom';
 
 export interface GiftInfo {
@@ -38,18 +38,15 @@ export class ResultsScreen {
   private holdFill = el('i');
   private holdTimer = 0;
   private onDone: (() => void) | null = null;
-  /** Without a key press for this long, a half-typed name stops holding the screen open. */
-  static readonly TYPING_GRACE_MS = 20_000;
   private nameBox = el('div', 'r-namebox');
   private nameHint = el('p', 'r-name-hint');
-  private nameInput = el('input', 'r-name');
+  /** The booth has no keyboard, so each player gets a random preset name to save with one tap. */
+  private nameText = el('b', 'r-name');
   private saveButton = el('button', 'r-save');
   private nameMsg = el('p', 'r-name-msg');
   private viewButton = el('button', 'r-view');
   private entryId: string | null = null;
   private saved = false;
-  private focused = false;
-  private lastTyped = 0;
 
   constructor(parent: HTMLElement, private readonly i18n: I18n, private readonly holdMs: number, private readonly names: NameEntry | null = null) {
     const card = el('div', 'paper-card results-card');
@@ -69,32 +66,6 @@ export class ResultsScreen {
       if (e.key === 'Enter' || e.key === ' ') this.startHold();
     });
     this.hold.addEventListener('keyup', cancel);
-    const input = this.nameInput;
-    input.type = 'text';
-    input.maxLength = 12;
-    input.autocomplete = 'off';
-    input.spellcheck = false;
-    input.lang = 'en';
-    input.enterKeyHint = 'done';
-    input.addEventListener('input', () => {
-      const clean = cleanNameInput(input.value);
-      if (clean !== input.value) input.value = clean;
-      this.lastTyped = Date.now();
-      this.saveButton.disabled = finalName(clean) === null;
-    });
-    input.addEventListener('focus', () => {
-      this.focused = true;
-      this.lastTyped = Date.now();
-    });
-    input.addEventListener('blur', () => {
-      this.focused = false;
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        this.saveName();
-      }
-    });
     this.saveButton.type = 'button';
     this.saveButton.addEventListener('click', () => this.saveName());
     this.viewButton.type = 'button';
@@ -102,7 +73,7 @@ export class ResultsScreen {
       if (this.entryId) this.names?.open(this.entryId);
     });
     const field = el('div', 'r-namefield');
-    field.append(input, this.saveButton);
+    field.append(this.nameText, this.saveButton);
     this.nameBox.append(this.nameHint, field, this.nameMsg, this.viewButton);
     this.root.append(card, this.hold);
     this.root.dataset.ui = '';
@@ -117,11 +88,7 @@ export class ResultsScreen {
     this.showGift(info.gift);
     this.entryId = this.names ? info.entryId ?? null : null;
     this.saved = false;
-    this.focused = false;
-    this.lastTyped = 0;
-    this.nameInput.value = '';
-    this.nameInput.disabled = false;
-    this.saveButton.disabled = true;
+    this.nameText.textContent = randomName();
     this.saveButton.hidden = false;
     this.nameMsg.textContent = '';
     this.viewButton.hidden = true;
@@ -138,23 +105,14 @@ export class ResultsScreen {
     this.root.hidden = true;
   }
 
-  /** True while a player is typing a name, so the results screen should not time out under them. */
-  busy(now = Date.now()): boolean {
-    if (!this.entryId || this.saved || this.root.hidden) return false;
-    const active = this.focused || this.nameInput.value.length > 0;
-    return active && now - this.lastTyped < ResultsScreen.TYPING_GRACE_MS;
-  }
-
   private saveName(): void {
     if (!this.names || !this.entryId || this.saved) return;
-    const place = this.names.save(this.entryId, this.nameInput.value);
+    const place = this.names.save(this.entryId, this.nameText.textContent ?? '');
     if (place === false) {
       this.nameMsg.textContent = this.i18n.t('results.nameHint');
       return;
     }
     this.saved = true;
-    this.nameInput.disabled = true;
-    this.nameInput.blur();
     this.saveButton.hidden = true;
     this.nameMsg.textContent = place === null ? this.i18n.t('results.saved') : this.i18n.t('results.rank', { rank: place });
     this.viewButton.hidden = false;
@@ -208,7 +166,6 @@ export class ResultsScreen {
     this.thanks.textContent = this.i18n.t('results.thanks');
     this.holdLabel.textContent = this.i18n.t('results.hold');
     this.nameHint.textContent = this.i18n.t('results.nameHint');
-    this.nameInput.placeholder = this.i18n.t('results.namePlaceholder');
     this.saveButton.textContent = this.i18n.t('results.save');
     this.viewButton.textContent = this.i18n.t('results.viewBoard');
   }

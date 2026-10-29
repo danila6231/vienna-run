@@ -18,7 +18,7 @@ function fakes() {
     attract: { show: vi.fn(), hide: vi.fn(), configure: vi.fn() },
     howto: { showHowto: vi.fn(), showCount: vi.fn(), hide: vi.fn() },
     question: { show: vi.fn(), tick: vi.fn(), reveal: vi.fn(), hide: vi.fn() },
-    results: { show: vi.fn(), hide: vi.fn(), busy: vi.fn(() => false) },
+    results: { show: vi.fn(), hide: vi.fn() },
   } satisfies GameUi;
   return { world, ui };
 }
@@ -239,19 +239,5 @@ describe('Game', () => {
     clock(game).run(200);
     expect(scores.records).toHaveLength(1);
     expect(((ui.results.show as ReturnType<typeof vi.fn>).mock.calls[0][0] as ResultsInfo).entryId).toBeNull();
-  });
-
-  it('keeps the results screen while a name is being typed, then resets by itself', () => {
-    const { world, ui } = fakes();
-    let typing = true;
-    (ui.results.busy as ReturnType<typeof vi.fn>).mockImplementation(() => typing);
-    const game = new Game({ cfg: CONFIG, bank, world, ui, seed: 5 });
-    game.press();
-    const c = clock(game);
-    c.run(200);
-    expect(game.flow.screen).toBe('results');
-    typing = false;
-    c.run(CONFIG.flow.resultsFallbackSeconds + 1);
-    expect(game.flow.screen).toBe('attract');
   });
 });

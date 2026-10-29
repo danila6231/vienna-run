@@ -52,80 +52,48 @@ describe('ResultsScreen', () => {
     const names = { save: vi.fn<(id: string, name: string) => number | null | false>(() => saveResult), open: vi.fn<(id: string) => void>() };
     const s = new ResultsScreen(document.body, new I18n('en'), 1000, names);
     s.show({ score: 90, gift: null, entryId }, () => undefined);
-    const input = s.root.querySelector<HTMLInputElement>('.r-name')!;
+    const name = s.root.querySelector<HTMLElement>('.r-name')!;
     const save = s.root.querySelector<HTMLButtonElement>('.r-save')!;
-    return { s, names, input, save };
+    return { s, names, name, save };
   }
-  const typeInto = (input: HTMLInputElement, text: string) => {
-    input.value = text;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  };
 
-  it('offers name entry only for a round that can be saved', () => {
+  it('offers name saving only for a round that can be saved', () => {
     expect(nameSetup(null).s.root.querySelector<HTMLElement>('.r-namebox')!.hidden).toBe(true);
     expect(nameSetup('r1').s.root.querySelector<HTMLElement>('.r-namebox')!.hidden).toBe(false);
   });
 
-  it('keeps only code-name characters as the player types', () => {
-    const { input, save } = nameSetup();
-    expect(save.disabled).toBe(true);
-    typeInto(input, 'Đức Anh!!');
-    expect(input.value).toBe('Duc Anh');
-    expect(save.disabled).toBe(false);
-    expect(input.maxLength).toBe(12);
-    expect(input.placeholder).toBe('Your name');
+  it('has no text field: every player gets a ready-made preset name', () => {
+    const { s, name } = nameSetup();
+    expect(s.root.querySelector('input')).toBeNull();
+    expect(name.textContent).toMatch(/^[A-Za-z]+\d{3}$/);
   });
 
-  it("saves once, shows today's place, then locks", () => {
-    const { s, names, input, save } = nameSetup();
-    typeInto(input, 'Anna');
+  it('picks a fresh name for each player', () => {
+    const rand = vi.spyOn(Math, 'random');
+    rand.mockReturnValue(0);
+    const { s, name } = nameSetup();
+    const first = name.textContent;
+    rand.mockReturnValue(0.5);
+    s.show({ score: 10, gift: null, entryId: 'r2' }, () => undefined);
+    expect(name.textContent).not.toBe(first);
+    rand.mockRestore();
+  });
+
+  it("saves the shown name once, shows today's place, then locks", () => {
+    const { s, names, name, save } = nameSetup();
     save.click();
-    expect(names.save).toHaveBeenCalledExactlyOnceWith('r1', 'Anna');
+    expect(names.save).toHaveBeenCalledExactlyOnceWith('r1', name.textContent);
     expect(s.root.textContent).toContain("You're #3 today!");
-    expect(input.disabled).toBe(true);
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(save.hidden).toBe(true);
     save.click();
     expect(names.save).toHaveBeenCalledTimes(1);
     s.root.querySelector<HTMLButtonElement>('.r-view')!.click();
     expect(names.open).toHaveBeenCalledWith('r1');
   });
 
-  it('saves with the Enter key, and says "Saved!" outside the top 10', () => {
-    const { s, names, input } = nameSetup('r2', null);
-    typeInto(input, 'Bo');
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    expect(names.save).toHaveBeenCalledTimes(1);
-    expect(s.root.querySelector('.r-name-msg')?.textContent).toBe('Saved!');
-  });
-
-  it('keeps the screen open while someone types, and lets go 20 seconds after the last key', () => {
-    const { s, input } = nameSetup();
-    expect(s.busy()).toBe(false);
-    input.dispatchEvent(new FocusEvent('focus'));
-    expect(s.busy()).toBe(true);
-    typeInto(input, 'An');
-    vi.advanceTimersByTime(19_000);
-    expect(s.busy()).toBe(true);
-    vi.advanceTimersByTime(2_000);
-    expect(s.busy()).toBe(false);
-    typeInto(input, 'Ann');
-    expect(s.busy()).toBe(true);
-  });
-
-  it('is not busy once the name is saved, or when name entry is off', () => {
-    const { s, input, save } = nameSetup();
-    input.dispatchEvent(new FocusEvent('focus'));
-    typeInto(input, 'Anna');
+  it('says "Saved!" outside the top 10', () => {
+    const { s, save } = nameSetup('r2', null);
     save.click();
-    expect(s.busy()).toBe(false);
-    expect(nameSetup(null).s.busy()).toBe(false);
-  });
-
-  it('lets go of the keyboard when the screen closes, so the touch keyboard goes away', () => {
-    const { s, input } = nameSetup();
-    input.focus();
-    expect(document.activeElement).toBe(input);
-    s.hide();
-    expect(document.activeElement).not.toBe(input);
+    expect(s.root.querySelector('.r-name-msg')?.textContent).toBe('Saved!');
   });
 });

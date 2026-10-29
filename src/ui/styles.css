@@ -146,11 +146,9 @@ body.hide-cursor, body.hide-cursor * { cursor: none !important; }
 .r-hold span { position: relative; }
 .r-namebox { display: grid; justify-items: center; gap: 1cqmin; margin-top: 0.6cqmin; }
 .r-name-hint { margin: 0; font-size: 2.2cqmin; color: var(--muted); }
-.r-namefield { display: flex; gap: 1.2cqmin; }
-.r-name { font: 600 3.4cqmin var(--font-body); width: 36cqmin; padding: 1.2cqmin 2cqmin; border-radius: 1cqmin; border: 0.4cqmin solid var(--ink); background: #fff; color: var(--ink); text-align: center; letter-spacing: 0.04em; }
-.r-name:disabled { background: var(--paper-2); }
+.r-namefield { display: flex; align-items: center; gap: 1.2cqmin; }
+.r-name { font: 600 3.4cqmin var(--font-body); min-width: 30cqmin; padding: 1.2cqmin 2cqmin; border-radius: 1cqmin; border: 0.4cqmin solid var(--ink); background: #fff; color: var(--ink); text-align: center; letter-spacing: 0.04em; }
 .r-save, .r-view { font: 600 3cqmin var(--font-body); padding: 1.2cqmin 3.4cqmin; border-radius: 1cqmin; border: 0.4cqmin solid var(--red); background: var(--red); color: #fff; cursor: pointer; touch-action: manipulation; }
-.r-save:disabled { opacity: 0.45; cursor: default; }
 .r-view { background: #fff; color: var(--red); }
 .r-name-msg { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 4.4cqmin; color: var(--red); }
 .r-name-msg:empty { display: none; }

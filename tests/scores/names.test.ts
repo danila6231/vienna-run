@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD_RE } from '../../src/core/settings';
-import { cleanNameInput, finalName, nextBoardName } from '../../src/scores/names';
+import { cleanNameInput, finalName, nextBoardName, PRESET_NAMES, randomName } from '../../src/scores/names';
 
 describe('cleanNameInput', () => {
   it.each([
@@ -27,6 +27,23 @@ describe('finalName', () => {
     expect(finalName('   ')).toBeNull();
     expect(finalName('!!!')).toBeNull();
     expect(finalName('')).toBeNull();
+  });
+});
+
+describe('randomName', () => {
+  it('is a preset name plus a 3-digit number', () => {
+    expect(randomName(() => 0)).toBe(`${PRESET_NAMES[0]}100`);
+    expect(randomName(() => 0.9999)).toBe(`${PRESET_NAMES[PRESET_NAMES.length - 1]}999`);
+  });
+  it('always passes as a code name', () => {
+    for (const base of PRESET_NAMES) {
+      const name = `${base}999`;
+      expect(finalName(name)).toBe(name);
+    }
+    for (let i = 0; i < 200; i++) {
+      const name = randomName();
+      expect(finalName(name)).toBe(name);
+    }
   });
 });
 

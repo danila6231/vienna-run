@@ -41,7 +41,7 @@ export interface GameUi {
     reveal(correct: number, picked: number | null): void;
     hide(): void;
   };
-  results: { show(info: ResultsInfo, onDone: () => void): void; hide(): void; busy(): boolean };
+  results: { show(info: ResultsInfo, onDone: () => void): void; hide(): void };
 }
 
 export interface RecentStore {
@@ -167,7 +167,6 @@ export class Game {
         this.run.update(dt); // coast to a stop under the banner
         break;
       case 'results':
-        if (ui.results.busy()) this.flow.holdResults();
         if (this.o.autoplay && this.flow.elapsed > 2) this.flow.nextPlayer();
         break;
       default:

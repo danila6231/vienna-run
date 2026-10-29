@@ -16,6 +16,18 @@ export function cleanNameInput(raw: string): string {
     .slice(0, 12);
 }
 
+/** Vienna-flavoured names for players who can't type at the booth; each fits 12 characters with a 3-digit number. */
+export const PRESET_NAMES = [
+  'Mozart', 'Strauss', 'Haydn', 'Schubert', 'Beethoven', 'Mahler', 'Klimt', 'Sissi', 'Krampus', 'Lipizzan',
+  'Sacher', 'Strudel', 'Melange', 'Schnitzel', 'Walzer', 'Danube', 'Prater', 'Opera', 'Violin', 'Piano',
+] as const;
+
+/** A preset name plus a number from 100 to 999 ("Mozart427"), so two players rarely share one. */
+export function randomName(rand: () => number = Math.random): string {
+  const base = PRESET_NAMES[Math.floor(rand() * PRESET_NAMES.length)];
+  return `${base}${100 + Math.floor(rand() * 900)}`;
+}
+
 /** The name to store, or null when nothing usable is left. */
 export function finalName(raw: string): string | null {
   const name = cleanNameInput(raw).trim();

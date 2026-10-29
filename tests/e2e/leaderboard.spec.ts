@@ -15,19 +15,19 @@ async function toResults(page: Page) {
   await page.waitForFunction(() => (window as any).__vr?.screen === 'results', null, { timeout: 120_000 });
 }
 
-test('a player saves a code name and sees it on the start screen', async ({ page }) => {
+test('a player saves the preset name with one tap and sees it on the start screen', async ({ page }) => {
   await page.route(`${API}**`, (route) => route.abort('internetdisconnected'));
   await toResults(page);
-  const name = page.locator('.r-name');
-  await name.pressSequentially('Anna!!', { delay: 20 });
-  await expect(name).toHaveValue('Anna');
+  await expect(page.locator('.results input')).toHaveCount(0);
+  const name = (await page.locator('.r-name').textContent())!;
+  expect(name).toMatch(/^[A-Za-z]+\d{3}$/);
   await page.locator('.r-save').click();
   await expect(page.locator('.r-name-msg')).toHaveText('Bạn đứng thứ #1 hôm nay!');
   await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
   // Both lists are on the start screen: today's and the all-time top 10.
   await expect(page.locator('.board-section')).toHaveCount(2);
-  await expect(page.locator('.board-section').nth(0)).toContainText('Anna');
-  await expect(page.locator('.board-section').nth(1)).toContainText('Anna');
+  await expect(page.locator('.board-section').nth(0)).toContainText(name);
+  await expect(page.locator('.board-section').nth(1)).toContainText(name);
 });
 
 test('a score saved offline uploads exactly once when the connection returns', async ({ page }) => {
@@ -50,7 +50,7 @@ test('a score saved offline uploads exactly once when the connection returns', a
     return route.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify(named) });
   });
   await toResults(page);
-  await page.locator('.r-name').pressSequentially('Bo');
+  const name = await page.locator('.r-name').textContent();
   await page.locator('.r-save').click();
   await page.waitForFunction(() => (window as any).__vr?.screen === 'attract', null, { timeout: 60_000 });
   await page.waitForTimeout(500);
@@ -62,5 +62,5 @@ test('a score saved offline uploads exactly once when the connection returns', a
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await page.waitForTimeout(1_500);
   expect(posted).toHaveLength(1);
-  expect(rows[0]).toMatchObject({ name: 'Bo', board: 'booth', lang: 'vi', preset: 'normal', questions_on: true });
+  expect(rows[0]).toMatchObject({ name, board: 'booth', lang: 'vi', preset: 'normal', questions_on: true });
 });
