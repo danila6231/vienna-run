@@ -24,6 +24,13 @@ describe('QualityMonitor', () => {
     const m = new QualityMonitor();
     expect(feed(m, 20, 20)).toEqual(['low']);
   });
+  it('shrugs off a hitch on a smooth machine (a round starting, a garbage collection)', () => {
+    const m = new QualityMonitor();
+    feed(m, 60, 3.5); // half a second into the first measured window
+    expect(m.sample(1.5)).toBeNull(); // one frame stuck for 1.5 s: that window would average ~30 fps
+    expect(feed(m, 60, 20)).toEqual([]);
+    expect(m.level).toBe('high');
+  });
   it('ignores the warm-up seconds', () => {
     const m = new QualityMonitor();
     expect(feed(m, 20, 2.5)).toEqual([]);

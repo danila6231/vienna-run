@@ -138,6 +138,8 @@ const graphics: Section = {
     box.append(
       choice('Street', [{ value: '3d', label: '3D' }, { value: 'paper', label: 'Paper (lighter)' }] as const, d.street, (v) => edit((x) => { x.street = v; })),
       note('Paper draws the houses and landmarks as flat cutouts. Use it if this PC cannot keep the frame rate at 50 fps or more (the self-check screen shows it). This device only; the game restarts when you save a change.'),
+      choice('Sharpness', [{ value: 'auto', label: 'Auto' }, { value: 'high', label: 'High' }, { value: 'med', label: 'Medium' }, { value: 'low', label: 'Low' }] as const, d.graphics, (v) => edit((x) => { x.graphics = v; })),
+      note('How many pixels the game draws. Auto starts on High and steps down (to Medium, then Low) while this PC stays below about 50 fps; it never changes the street itself, only how sharp it is. Pick a level to fix it. This device only.'),
     );
     return box;
   },
@@ -192,7 +194,7 @@ const share: Section = {
       ctx.notice('Code loaded. Check the values, then press Save.');
     });
     const box = el('div');
-    box.append(note('Moves these settings to another device: everything except the PIN, the leaderboard board, the street look and the sound switch, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
+    box.append(note('Moves these settings to another device: everything except the PIN, the leaderboard board, the street look, graphics and the sound switch, which stay per device.'), row('This device', copy), out, row('Another device', load), input);
     return box;
   },
 };
@@ -235,8 +237,8 @@ export class SettingsPanel {
     const actions = el('div', 'st-actions');
     actions.append(
       button('Reset to defaults', () => {
-        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard }, street: x.street, sound: x.sound }), true);
-        this.ctx.notice('Defaults restored (PIN, board name, street look and sound switch kept). Press Save to keep them.');
+        this.ctx.edit((x) => Object.assign(x, { ...defaultSettings(), pin: x.pin, leaderboard: { ...x.leaderboard }, street: x.street, graphics: x.graphics, sound: x.sound }), true);
+        this.ctx.notice('Defaults restored (PIN, board name, street look, graphics and sound switch kept). Press Save to keep them.');
       }),
       button('Cancel', () => this.close()),
       this.saveButton,

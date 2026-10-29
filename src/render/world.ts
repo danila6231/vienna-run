@@ -78,8 +78,6 @@ export function createWorld(canvas: HTMLCanvasElement, art: ArtSet, laneWidth: n
     setQuality(level) {
       renderer.setPixelRatio(pixelRatioFor(level, window.devicePixelRatio));
       renderer.setSize(w, h, false);
-      street.setDetail(level !== 'low');
-      sky.setDetail(level !== 'low');
     },
   };
 }

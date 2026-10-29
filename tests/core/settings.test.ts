@@ -132,6 +132,11 @@ describe('sanitize', () => {
     expect(sanitize({ ...defaultSettings(), sound: false }).sound).toBe(false);
     expect(sanitize({ ...defaultSettings(), sound: 'off' }).sound).toBe(true);
   });
+  it('keeps a known graphics level and falls back to Auto for anything else', () => {
+    expect(defaultSettings().graphics).toBe('auto');
+    expect(sanitize({ ...defaultSettings(), graphics: 'low' }).graphics).toBe('low');
+    expect(sanitize({ ...defaultSettings(), graphics: 'ultra' }).graphics).toBe('auto');
+  });
   it('keeps a known street look and falls back to 3D for anything else', () => {
     expect(sanitize({ ...defaultSettings(), street: 'paper' }).street).toBe('paper');
     expect(sanitize({ ...defaultSettings(), street: 'vr' }).street).toBe('3d');
@@ -171,6 +176,12 @@ describe('share codes', () => {
     expect(toShareCode(quiet)).not.toContain('sound');
     expect(fromShareCode(toShareCode(quiet), defaultSettings())?.sound).toBe(true);
     expect(fromShareCode(toShareCode(defaultSettings()), quiet)?.sound).toBe(false);
+  });
+  it("never move a device to another device's graphics level", () => {
+    const weak = { ...defaultSettings(), graphics: 'low' as const };
+    expect(toShareCode(weak)).not.toContain('graphics');
+    expect(fromShareCode(toShareCode(weak), defaultSettings())?.graphics).toBe('auto');
+    expect(fromShareCode(toShareCode(defaultSettings()), weak)?.graphics).toBe('low');
   });
   it("never move a device to another device's street look", () => {
     const booth = { ...defaultSettings(), street: 'paper' as const };

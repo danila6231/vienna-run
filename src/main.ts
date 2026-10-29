@@ -18,7 +18,7 @@ import habaneraUrl from './assets/audio/habanera.m4a?url';
 import { loadArt } from './assets/manifest';
 import { CONFIG } from './config';
 import { validateBank } from './core/questions';
-import { buildConfig, featuresOf, type StreetLook } from './core/settings';
+import { buildConfig, featuresOf, type Graphics, type StreetLook } from './core/settings';
 import { BAD_TYPES, GOOD_TYPES, type RoadType } from './core/types';
 import bankJson from './data/questions.json';
 import { I18n } from './i18n/i18n';
@@ -98,7 +98,11 @@ async function boot(): Promise<void> {
     world.setQuality(level);
     stage.classList.toggle('quality-low', level === 'low');
   };
-  if (params.quality) applyQuality(params.quality);
+  // ?quality= in the address beats the staff setting.
+  const fixedQuality = (g: Graphics): QualityLevel | undefined => params.quality ?? (g === 'auto' ? undefined : g);
+  const startLevel = fixedQuality(settings.graphics);
+  if (startLevel) applyQuality(startLevel);
+  let monitor = startLevel ? null : new QualityMonitor('high');
   if (params.check) {
     runSelfCheck(stage, world, art);
     return;
@@ -180,6 +184,11 @@ async function boot(): Promise<void> {
     onSave: (s) => {
       // The street is built once at start-up, so a new street look takes a restart (settings and scores are saved first).
       const restart = s.street !== settings.street;
+      if (s.graphics !== settings.graphics) {
+        const level = fixedQuality(s.graphics);
+        applyQuality(level ?? 'high');
+        monitor = level ? null : new QualityMonitor('high');
+      }
       settings = s;
       saveSettings(s);
       scores.setBoard(s.leaderboard.board);
@@ -229,7 +238,6 @@ async function boot(): Promise<void> {
       if (!staffOpen && !boardModal.isOpen) game.press();
     },
   });
-  const monitor = params.quality ? null : new QualityMonitor('high');
   const stepper = new FixedStepper(1 / 60, params.speed);
   loop = startLoop(
     stepper,

@@ -5,7 +5,6 @@ import type { Reach } from './reach';
 
 export interface Sky {
   update(dt: number): void;
-  setDetail(high: boolean): void;
   /** Moves the fog, and the skyline and clouds with it, out to how far ahead the player should see. */
   setReach(r: Reach): void;
 }
@@ -46,9 +45,6 @@ export function createSky(scene: THREE.Scene, art: ArtSet): Sky {
         s.position.x += dt * (0.6 + i * 0.1);
         if (s.position.x > 170) s.position.x = -170;
       });
-    },
-    setDetail(high) {
-      clouds.forEach((s) => (s.visible = high));
     },
     setReach(r) {
       fog.near = r.fogNear;

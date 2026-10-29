@@ -126,6 +126,12 @@ describe('SettingsPanel', () => {
     click(root, 'Save');
     expect(onSave.mock.calls[0][0].sound).toBe(false);
   });
+  it('fixes the graphics sharpness', () => {
+    const { root, onSave } = setup();
+    click(root, 'Medium');
+    click(root, 'Save');
+    expect(onSave.mock.calls[0][0].graphics).toBe('med');
+  });
   it('switches the street to the paper look', () => {
     const { root, onSave } = setup();
     click(root, 'Paper (lighter)');
@@ -150,11 +156,11 @@ describe('SettingsPanel', () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
-  it('Reset to defaults keeps the PIN, the board name, the street look and the sound switch', () => {
-    const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false });
+  it('Reset to defaults keeps the PIN, the board name, the street look, graphics and the sound switch', () => {
+    const { root, onSave } = setup({ ...applyPreset(defaultSettings(), 'hard'), pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', graphics: 'low', sound: false });
     click(root, 'Reset to defaults');
     click(root, 'Save');
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'normal', obstacles: 80, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', sound: false }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preset: 'normal', obstacles: 80, pin: '1357', leaderboard: { enabled: true, board: 'booth-2' }, street: 'paper', graphics: 'low', sound: false }));
   });
   it('loads a share code, and rejects a bad one without changing anything', () => {
     const { root } = setup();

@@ -9,8 +9,6 @@ import { heightForWidth } from './sizing';
 export interface Street {
   update(dist: number, route: Route): void;
   reset(): void;
-  /** False on the low graphics level: hides the back row and draws every 3D house in its lite geometry. */
-  setDetail(high: boolean): void;
 }
 
 /** One look a pooled row slot can take: its own geometry, material and height (the mesh stands at h/2). */
@@ -124,7 +122,6 @@ export function createStreet(scene: THREE.Scene, art: ArtSet, houses?: HouseRows
   addRow('lamp', -1, { count: 15, spacing: 16, offset: 2 }, lamps, -5.05, 0);
   addRow('lamp', 1, { count: 15, spacing: 16, offset: 10 }, lamps, 5.05, 0);
 
-  let detailed = true;
   return {
     update(dist, route) {
       roadTex.offset.y = (dist / 9) % 1;
@@ -141,16 +138,13 @@ export function createStreet(scene: THREE.Scene, art: ArtSet, houses?: HouseRows
           row.p[i] = p;
           m.position.z = dist - p;
           const v = row.variants[row.pick[i]];
-          if (v.lite) m.geometry = detailed && p - dist <= LITE_AHEAD ? v.geo : v.lite;
-          m.visible = row.kind === 'lamp' || ((row.kind === 'front' || detailed) && !route.inPlaza(p, row.side, row.kind === 'back' ? 4 : 0));
+          if (v.lite) m.geometry = p - dist <= LITE_AHEAD ? v.geo : v.lite;
+          m.visible = row.kind === 'lamp' || !route.inPlaza(p, row.side, row.kind === 'back' ? 4 : 0);
         });
       }
     },
     reset() {
       for (const row of rows) row.p = initialPositions(row);
-    },
-    setDetail(high) {
-      detailed = high;
     },
   };
 }

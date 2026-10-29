@@ -3,6 +3,8 @@ import type { QualityLevel } from './world';
 /**
  * Watches real frame times after a warm-up and lowers the graphics level until the booth PC
  * holds about 50 fps. It never raises the level again, so the picture doesn't flicker between modes.
+ * Each window is judged by its median frame, so one hitch (a round starting, a garbage collection)
+ * can't pull a smooth machine down.
  */
 export class QualityMonitor {
   level: QualityLevel;
@@ -22,7 +24,8 @@ export class QualityMonitor {
     this.frames.push(frameSeconds);
     const total = this.frames.reduce((a, b) => a + b, 0);
     if (total < this.window) return null;
-    const fps = this.frames.length / total;
+    const sorted = [...this.frames].sort((a, b) => a - b);
+    const fps = 1 / sorted[sorted.length >> 1];
     this.frames = [];
     if (fps >= 50) {
       this.settled = true;
